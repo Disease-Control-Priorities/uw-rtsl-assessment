@@ -369,5 +369,5 @@ if(run_CF_trend== TRUE){
 }
 
 # Clean up environment
-rm("adjustments","bgmx_fcst","dt_pop_unwpp","pop20","wpp.adj","rep")
+rm("adjustments","bgmx_fcst","dt_pop_unwpp","wpp.adj","rep","pop20")
 

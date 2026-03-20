@@ -17,7 +17,7 @@ library(gmodels)
 # For forecasting mortality
 library(forecast)
 
-wd <- "C:/Users/wrgar/OneDrive - UW/02Work/ResolveToSaveLives/SodiumPolicy/github/UWRTSL-sodium-policy/"
+wd <- "C:/Users/wrgar/OneDrive - UW/02Work/ResolveToSaveLives/Assessment/uw-rtsl-assessment/"
 
 wd_code <- paste0(wd,"code/")
 
@@ -108,5 +108,4 @@ source("05_build_baseline.R")
 # 06. Run model ----
 #...........................................................
 
-# Run Aim 1: multiple interventions
-source("06_run_scenarios_multiple.R")
+source("06_run_scenarios.R")
