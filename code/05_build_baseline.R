@@ -371,3 +371,60 @@ if(run_CF_trend== TRUE){
 # Clean up environment
 rm("adjustments","bgmx_fcst","dt_pop_unwpp","wpp.adj","rep","pop20")
 
+
+#...........................................................
+# HTN Program Enrolled Population----
+#...........................................................
+
+# We need to recompute the population enrolled in HTN control programs by location and year based
+# on the HTN global tracker data, which provides cumulative enrollment
+# and the UNWPP population data, which provides total population by location, year and age and sex distribution 
+# In the antihypertensive treatment model, we will apply the control rates from the HTN program 
+# dataset to the population enrolled in HTN control programs to estimate the number of people with
+# BP controlled through these programs by location and year instead of the UNWPP country wide population.
+# This will allow us to estimate the impact of HTN control programs on CVD outcomes in our model.
+
+# Load HTN program enrollment data
+dt_htn_control_scenarios <- fread(paste0(wd_data, "htn_control_scenarios_by_loc_year.csv"))
+
+# Keep location, year, enrollment columns
+dt_htn_control_scenarios <- dt_htn_control_scenarios[, .(location, year, enrolled)]
+
+# Compute location, year, age, sex distribution form baseline population data with source UNWPP b_rates Nx
+
+# First keep in b rates only program countries
+#b_rates <- b_rates[location %in% dt_htn_control_scenarios$location,]
+
+# Then compute proportion of population location, year, age and sex
+dt_population_distribution <- b_rates[cause=="ihd", .(population = sum(Nx)), by = .(location, year,age,sex)]
+
+dt_population_distribution[, population_proportion := population / sum(population), by = .(location, year)]
+
+# Merge population distribution with HTN program enrollment data
+dt_htn_enrollment <- merge(dt_htn_control_scenarios, dt_population_distribution,
+                         by = c("location", "year"), all.y = TRUE)
+
+# If year <2017 the enrollment is 1
+dt_htn_enrollment[year<2017, enrolled := 1]
+
+# Compute columns Nx_program and pop_program by multiplying enrollment by population proportion
+dt_htn_enrollment[, Nx_program := enrolled * population_proportion]
+dt_htn_enrollment[, pop_program := Nx_program]
+
+# # Sanity check: sum of pop_program by location and year should equal enrollment
+# dt_htn_enrollment[, enrollment_check := sum(pop_program), by = .(location,year)]
+# dt_htn_enrollment[, enrollment_diff := enrolled-enrollment_check]
+
+# Keep only relevant variables and merge back to b_rates
+dt_htn_enrollment <- dt_htn_enrollment[, .(location, year, age, sex, Nx_program,pop_program)]
+
+b_rates <- merge(b_rates, dt_htn_enrollment, by = c("location", "year", "age", "sex"), all.x = TRUE)
+
+# Assign 1 to Nx_program and pop_program for non-program countries and years <2017
+b_rates[is.na(Nx_program), Nx_program := 1]
+b_rates[is.na(pop_program), pop_program := 1]
+b_rates[year<2017, Nx_program := 1]
+b_rates[year<2017, pop_program := 1]
+
+# Clean up environment
+rm("dt_htn_control_scenarios", "dt_population_distribution", "dt_htn_enrollment")
