@@ -302,34 +302,10 @@ fwrite(dt_htn_control_scenarios, paste0(wd_data, "htn_control_scenarios_by_loc_y
 
 # TFA Impact----
 
-#DT AI not included
-#dt_tfa <- fread(paste0(wd_raw,"TFAPolicy/","tfa_intake.csv"))
-# Extract first numeric value (including decimals)
-# dt_tfa[, tfa_current := as.numeric(stringr::str_extract(`Mean TFA Intake (%E)`, "\\d+\\.?\\d*"))]
 
-# Input from IHME
-dt_tfa <- fread(paste0(wd_raw,"IHME_GBD_2023_DIET_RISK_1990_2024_TRANSFAT_Y2024M11D05",".csv"))
+##? pending to re check IHME pop groups
 
-dt_tfa <- dt_tfa[,c("year_id","location_name","sex_name","age_group_name","val","upper","lower","age_group_id"),with = F]
-
-setnames(dt_tfa,c("year_id","location_name","sex_name","age_group_name","val","upper","lower"),
-         c("year","location","sex","age","tfa_current","tfa_current_upper","tfa_current_lower"))
-
-dt_tfa <- dt_tfa[location!="Global",]
-
-# rename locations
-dt_tfa[location == "Türkiye", location := "Turkey"]
-dt_tfa[location == "Côte d'Ivoire", location := "Ivory Coast"]
-
-# Only covers from 25 years and older, so imputing for 20-24 yearsas 25-29 years
-
-dt_tfa_20 <- dt_tfa[age == "25 to 29",]
-dt_tfa_20[, age := "20 to 24"]
-dt_tfa <- rbind(dt_tfa, dt_tfa_20)
-
-rm(dt_tfa_20)
-
-# Countries with BPP
+dt_tfa_scenarios <- readRDS(file = paste0(wd_data,"tfa_policy_scenarios.rds"))
 
 dt_tfa_bpp <- as.data.table(read_excel(paste0(wd_raw,"List of Countries with Policies Passed-updated March 2026.xlsx"), 
                                        sheet = "Sheet1", range = "A3:D56")) 
@@ -344,26 +320,122 @@ name_map <- c(
 dt_tfa_bpp[, Country := fcoalesce(name_map[Country], Country)]
 
 #? Leichtein has no tfa data but policy
-dt_tfa <- merge(dt_tfa, dt_tfa_bpp, by.x = "location", by.y= "Country", all.x = TRUE,all.y = F)
+dt_tfa_scenarios <- merge(dt_tfa_scenarios, dt_tfa_bpp, by.x = "location", by.y= "Country", all.x = TRUE,all.y = F)
 
-# check locations
-dt_check <- dt_tfa[is.na(sex),]
-
-setnames(dt_tfa, c("Date passed", "Date in Effect","RTSL Direct engagement"),
+setnames(dt_tfa_scenarios, c("Date passed", "Date in Effect","RTSL Direct engagement"),
          c("tfa_bpp_date_passed", "tfa_bpp_date_in_effect","tfa_rtsl_engagement"))
 
-#dt_tfa <- dt_tfa[, .(location, tfa_current, tfa_bpp_date_passed, tfa_bpp_date_in_effect)]
-
-dt_tfa <- dt_tfa[sex!="Both",]
-
 # encode engagement as binary variable
-dt_tfa[, tfa_rtsl_engagement := ifelse(is.na(tfa_rtsl_engagement), "No", "Yes")]
+dt_tfa_scenarios[, tfa_rtsl_engagement := ifelse(is.na(tfa_rtsl_engagement), "No", "Yes")]
+
+# subset from year 2016 for counterfactual   
+dt_tfa_scenarios <- dt_tfa_scenarios[year>=2016,]
+
+# subset countries of interest TFA bp passed 2016-2024
+dt_tfa_scenarios_counterfactual <- dt_tfa_scenarios[!is.na(tfa_bpp_date_passed) & year >= 2016 & year <= 2024 & tfa_current>0,]
+
+# order most recent non zero observation by location and year
+dt_tfa_scenarios_counterfactual <- dt_tfa_scenarios_counterfactual[order(location, year, decreasing = TRUE),]
+
+# keep only one observation by location and only location year_recent and tfa_current columns
+dt_tfa_scenarios_counterfactual <- dt_tfa_scenarios_counterfactual[, .SD[1], by = location, .SDcols = c("year","tfa_current")]
+
+# rename tfa counterfacual and merge with dt_tfa scenarios
+setnames(dt_tfa_scenarios_counterfactual, c("year","tfa_current"), c("year_counterfactual","tfa_counterfactual"))
+
+dt_tfa_scenarios <- merge(dt_tfa_scenarios, dt_tfa_scenarios_counterfactual, by = "location", all.x = TRUE)
+
+# create tfa_observed as tfa_current
+dt_tfa_scenarios[, tfa_observed := tfa_current]
+
+# impute tfa_current to counterfectual if year >= year_counterfactual
+dt_tfa_scenarios[!is.na(year_counterfactual) & year >= year_counterfactual, tfa_current := tfa_counterfactual]
+
+# Convert to percent scale
+dt_tfa_scenarios[, tfa_current := tfa_current * 100]
+
+# for this assessment target equals current
+dt_tfa_scenarios[, tfa_target  := tfa_current]
+
+# if year >= bpp in effect then tfa_target==0
+dt_tfa_scenarios[!is.na(tfa_bpp_date_passed) & year>=tfa_bpp_date_in_effect, tfa_target := 0]
+
+# Cases to highlight in presentation slideck
+
+# 1) India with BPP passed and RTSL engagement and IHME data had errors
+# 2) Colombia which passed and just started
+# 3) Viet Nam no RTSL engagement and not passed
+# 4) Thailand no RTSL engagement and passed
 
 # Save the data
-saveRDS(dt_tfa, file = paste0(wd_data,"tfa_data.rds"))
+saveRDS(dt_tfa_scenarios, file = paste0(wd_data,"tfa_policy_scenarios_assessment.rds"))
 
 # cleaning: remove objects that are no longer needed
-rm(dt_tfa, dt_tfa_bpp,dt_check)
+rm(dt_tfa_scenarios, dt_tfa_bpp, dt_tfa_scenarios_counterfactual)
+
+
+# #DT AI not included
+# #dt_tfa <- fread(paste0(wd_raw,"TFAPolicy/","tfa_intake.csv"))
+# # Extract first numeric value (including decimals)
+# # dt_tfa[, tfa_current := as.numeric(stringr::str_extract(`Mean TFA Intake (%E)`, "\\d+\\.?\\d*"))]
+# 
+# # Input from IHME
+# dt_tfa <- fread(paste0(wd_raw,"IHME_GBD_2023_DIET_RISK_1990_2024_TRANSFAT_Y2024M11D05",".csv"))
+# 
+# dt_tfa <- dt_tfa[,c("year_id","location_name","sex_name","age_group_name","val","upper","lower","age_group_id"),with = F]
+# 
+# setnames(dt_tfa,c("year_id","location_name","sex_name","age_group_name","val","upper","lower"),
+#          c("year","location","sex","age","tfa_current","tfa_current_upper","tfa_current_lower"))
+# 
+# dt_tfa <- dt_tfa[location!="Global",]
+# 
+# # rename locations
+# dt_tfa[location == "Türkiye", location := "Turkey"]
+# dt_tfa[location == "Côte d'Ivoire", location := "Ivory Coast"]
+# 
+# # Only covers from 25 years and older, so imputing for 20-24 yearsas 25-29 years
+# 
+# dt_tfa_20 <- dt_tfa[age == "25 to 29",]
+# dt_tfa_20[, age := "20 to 24"]
+# dt_tfa <- rbind(dt_tfa, dt_tfa_20)
+# 
+# rm(dt_tfa_20)
+# 
+# # Countries with BPP
+# 
+# dt_tfa_bpp <- as.data.table(read_excel(paste0(wd_raw,"List of Countries with Policies Passed-updated March 2026.xlsx"), 
+#                                        sheet = "Sheet1", range = "A3:D56")) 
+# 
+# # rename locations to match gbd locations (the baseline)
+# name_map <- c(
+#   "Czech Republic"                    = "Czechia",
+#   "Macedonia"                         = "North Macedonia",
+#   "Moldova"                           = "Republic of Moldova",
+#   "Cyprus"                            = "Republic of Cyprus")
+# 
+# dt_tfa_bpp[, Country := fcoalesce(name_map[Country], Country)]
+# 
+# #? Leichtein has no tfa data but policy
+# dt_tfa <- merge(dt_tfa, dt_tfa_bpp, by.x = "location", by.y= "Country", all.x = TRUE,all.y = F)
+# 
+# # check locations
+# dt_check <- dt_tfa[is.na(sex),]
+# 
+# setnames(dt_tfa, c("Date passed", "Date in Effect","RTSL Direct engagement"),
+#          c("tfa_bpp_date_passed", "tfa_bpp_date_in_effect","tfa_rtsl_engagement"))
+# 
+# #dt_tfa <- dt_tfa[, .(location, tfa_current, tfa_bpp_date_passed, tfa_bpp_date_in_effect)]
+# 
+# dt_tfa <- dt_tfa[sex!="Both",]
+# 
+# # encode engagement as binary variable
+# dt_tfa[, tfa_rtsl_engagement := ifelse(is.na(tfa_rtsl_engagement), "No", "Yes")]
+# 
+# # Save the data
+# saveRDS(dt_tfa, file = paste0(wd_data,"tfa_data.rds"))
+# 
+# # cleaning: remove objects that are no longer needed
+# rm(dt_tfa, dt_tfa_bpp,dt_check)
 
 #...........................................................
 ## TFA Policy----
@@ -376,169 +448,169 @@ rm(dt_tfa, dt_tfa_bpp,dt_check)
 #   yearly_data[year >= tfa_bpp_date_in_effect & year < 2025, tfa_target := tfa_current]
 #   yearly_data
 # }, by = location]
-
-# TFA data
-dt_tfa <- readRDS(file = paste0(wd_data,"tfa_data.rds"))
-
-name_map <- c(
-  "United States of America"          = "United States",
-  "Taiwan"                            = "Taiwan (Province of China)",
-  "Urkraine (without Crimea & Sevastopol)" = "Ukraine")
-
-# P target
-p_tfa_target <- 0.00
-dt_tfa[, location := fcoalesce(name_map[location], location)]
-
-# Computing mean intake per location
-
-dt_pop <- readRDS(file = paste0("C:/Users/wrgar/OneDrive - UW/02Work/ResolveToSaveLives/100MLives/data/raw/GBD/","totalpop_ihme.rds"))
-
-dt_pop <- dt_pop[, .(location, year_id, sex_name, age_group_name, val),with=T]
-
-setnames(dt_pop, c("val", "year_id","sex_name"),
-         c("population","year","sex"))
-
-name_map <- c(
-  "United States of America"          = "United States",
-  "Taiwan"                            = "Taiwan (Province of China)",
-  "Urkraine (without Crimea & Sevastopol)" = "Ukraine")
-
-dt_pop[, location := fcoalesce(name_map[location], location)]
-
-
-age_match<-data.frame(age=20:95)%>%
-  mutate(age.group = ifelse(age<25, "20 to 24", NA),
-         age.group = ifelse(age>=25 & age<30, "25 to 29", age.group),
-         age.group = ifelse(age>=30 & age<35, "30 to 34", age.group),
-         age.group = ifelse(age>=35 & age<40, "35 to 39", age.group),
-         age.group = ifelse(age>=40 & age<45, "40 to 44", age.group),
-         age.group = ifelse(age>=45 & age<50, "45 to 49", age.group),
-         age.group = ifelse(age>=50 & age<55, "50 to 54", age.group),
-         age.group = ifelse(age>=55 & age<60, "55 to 59", age.group),
-         age.group = ifelse(age>=60 & age<65, "60 to 64", age.group),
-         age.group = ifelse(age>=65 & age<70, "65 to 69", age.group),
-         age.group = ifelse(age>=70 & age<75, "70 to 74", age.group),
-         age.group = ifelse(age>=75 & age<80, "75 to 79", age.group),
-         age.group = ifelse(age>=80 & age<85, "80 to 84", age.group),
-         age.group = ifelse(age>=85 & age<90, "85 to 89", age.group),
-         age.group = ifelse(age>=90 & age<95, "90 to 94", age.group),
-         age.group = ifelse(age==95, "95 plus", age.group))
-
-age_match$age <- as.character(age_match$age)
-
-dt_pop[age_group_name == "<1 year", age_group_name := "0"]
-dt_pop[age_group_name == "95 plus", age_group_name := "95"]
-
-dt_pop <- merge(dt_pop, age_match, by.x = "age_group_name", by.y = "age", all.x = TRUE)
-
-# Average population by age group (not year because POp comes up to 2019)
-dt_pop <- dt_pop[,list(population=mean(population)),by=list(location,sex,age.group)]
-
-dt_tfa[,age.group:=age]
-
-# Merge population data with TFA data
-dt_tfa <- merge(dt_tfa,dt_pop,
-                by = c("location","sex","age.group"), all.x = TRUE,all.y = F)
-
-# check not missing population . There are only 1 territories not included in our analysis
-#dt_check <- unique(dt_sodium[is.na(sodium_current),],by="location")
-dt_check <- unique(dt_tfa[is.na(population),],by="location")
-
-
-# compute mean TFA intake per location
-dt_tfa_mean <- dt_tfa[, .(tfa_current = weighted.mean(tfa_current,population, na.rm = TRUE),
-                          tfa_bpp_date_in_effect = min(tfa_bpp_date_in_effect, na.rm = TRUE),
-                          tfa_bpp_date_passed = min(tfa_bpp_date_passed, na.rm = TRUE)),
-                      by = list(year,location)]
-
-#dt_tfa_mean_24 <- dt_tfa_mean[year==2024,]
-
-#Most recent data from 2024:2019
-dt_tfa_mean_24 <- dt_tfa_mean[year %in% c(2024),]
-dt_tfa_mean_24 <- dt_tfa_mean_24[order(dt_tfa_mean_24$tfa_current,decreasing = T),]
-dt_tfa_mean_24 <- unique(dt_tfa_mean_24,by="location")
-
-years <- 2025:2050
-dt_tfa_scenarios <- dt_tfa_mean_24[, {
-  yearly_data <- data.table(year = years)
-  yearly_data[, tfa_current := tfa_current]
-  yearly_data
-}, by = location]
-
-dt_tfa_scenarios <- rbind(dt_tfa_mean,dt_tfa_scenarios,fill=T)
-
-# Add the tfa_target to the main data table
-
-dt_tfa_scenarios[,c("tfa_bpp_date_in_effect","tfa_bpp_date_passed"):=NULL]
-dt_tfa_scenarios <- merge(dt_tfa_scenarios, 
-                          dt_tfa_mean_24[, .(location, tfa_bpp_date_in_effect,tfa_bpp_date_passed)],
-                          by = "location", all.x = TRUE)
-
-# Fix bpp date for specific locations
-dt_tfa_scenarios[ , tfa_target := tfa_current]
-dt_tfa_scenarios[ tfa_bpp_date_passed<=2023 & year>2023 & year<2025 , tfa_target := ifelse(tfa_current<p_tfa_target,tfa_current,p_tfa_target)]
-#dt_tfa_scenarios[ year>=2025 , tfa_target := 0.005]
-#dt_tfa_scenarios[ year>=2027 , tfa_target := ifelse(tfa_current<p_tfa_target,tfa_current,p_tfa_target)]
-
-# ensure that once a country reaches 0, its tfa_target remain 0 thereafter.
-
-# Set initial targets to current values
-dt_tfa_scenarios[, tfa_target := tfa_current]
-
-# If TFA policy is passed before or in 2023, drop to target (0) by 2024
-dt_tfa_scenarios[
-  tfa_bpp_date_passed <= 2023 & year >= 2024, 
-  tfa_target := p_tfa_target
-]
-
-# For all countries, once TFA reaches 0, it cannot go up again
-dt_tfa_scenarios[, tfa_target := 
-                   ifelse(
-                     year >= min(year[tfa_target == p_tfa_target], na.rm = TRUE),
-                     p_tfa_target,
-                     tfa_target
-                   ),
-                 by = location
-]
-
-# Optional: also keep tfa_current at 0 after a country hits 0
-dt_tfa_scenarios[, tfa_current := 
-                   ifelse(
-                     year >= min(year[tfa_target == p_tfa_target], na.rm = TRUE),
-                     p_tfa_target,
-                     tfa_current
-                   ),
-                 by = location
-]
-
-dt_tfa_scenarios[ year>=2027 , tfa_target := ifelse(tfa_current<p_tfa_target,tfa_current,p_tfa_target)]
-
-dt_tfa_scenarios <- dt_tfa_scenarios[, .(location, year, tfa_current,tfa_target)]
-
-# Taiwan, Ukraine and other territories are NA, so assigning the minimum value
-dt_tfa_scenarios[is.na(tfa_target),  tfa_target := p_tfa_target]
-dt_tfa_scenarios[is.na(tfa_current), tfa_current := p_tfa_target]
-
-# Check country names
-dt_tfa_scenarios[, location := gsub("United States of America", "United States", location)]
-dt_tfa_scenarios[location=="Bolivia (Plurinational State of)", location := "Bolivia"]
-
-dt_tfa_scenarios[, location := gsub("Taiwan", "Taiwan (Province of China)", location)]
-
-dt_tfa_scenarios[, location := gsub("United Republic of Tanzania", "Tanzania", location)]
-
-# Fix countries names
-dt_tfa_scenarios[location == "Türkiye", location := "Turkey"]
-dt_tfa_scenarios[location == "Côte d'Ivoire", location := "Ivory Coast"]
-
-#print length(locs_statins)
-locs_tfa <- unique(dt_tfa_scenarios$location)
-print(paste0("Number of locations with tfa data: ", length(locs_tfa)))
-
-# Save the data
-saveRDS(dt_tfa_scenarios,file = paste0(wd_data,"TFAPolicy/", "tfa_policy_scenarios.rds"))
-
-# clean up
-rm(dt_tfa, dt_pop, dt_tfa_mean, dt_tfa_mean_24,
-   years, dt_tfa_scenarios, name_map, dt_check, age_match)
+# 
+# # TFA data
+# dt_tfa <- readRDS(file = paste0(wd_data,"tfa_data.rds"))
+# 
+# name_map <- c(
+#   "United States of America"          = "United States",
+#   "Taiwan"                            = "Taiwan (Province of China)",
+#   "Urkraine (without Crimea & Sevastopol)" = "Ukraine")
+# 
+# # P target
+# p_tfa_target <- 0.00
+# dt_tfa[, location := fcoalesce(name_map[location], location)]
+# 
+# # Computing mean intake per location
+# 
+# dt_pop <- readRDS(file = paste0("C:/Users/wrgar/OneDrive - UW/02Work/ResolveToSaveLives/100MLives/data/raw/GBD/","totalpop_ihme.rds"))
+# 
+# dt_pop <- dt_pop[, .(location, year_id, sex_name, age_group, val),with=T]
+# 
+# setnames(dt_pop, c("val", "year_id","sex_name"),
+#          c("population","year","sex"))
+# 
+# name_map <- c(
+#   "United States of America"          = "United States",
+#   "Taiwan"                            = "Taiwan (Province of China)",
+#   "Urkraine (without Crimea & Sevastopol)" = "Ukraine")
+# 
+# dt_pop[, location := fcoalesce(name_map[location], location)]
+# 
+# 
+# age_match<-data.frame(age=20:95)%>%
+#   mutate(age.group = ifelse(age<25, "20 to 24", NA),
+#          age.group = ifelse(age>=25 & age<30, "25 to 29", age.group),
+#          age.group = ifelse(age>=30 & age<35, "30 to 34", age.group),
+#          age.group = ifelse(age>=35 & age<40, "35 to 39", age.group),
+#          age.group = ifelse(age>=40 & age<45, "40 to 44", age.group),
+#          age.group = ifelse(age>=45 & age<50, "45 to 49", age.group),
+#          age.group = ifelse(age>=50 & age<55, "50 to 54", age.group),
+#          age.group = ifelse(age>=55 & age<60, "55 to 59", age.group),
+#          age.group = ifelse(age>=60 & age<65, "60 to 64", age.group),
+#          age.group = ifelse(age>=65 & age<70, "65 to 69", age.group),
+#          age.group = ifelse(age>=70 & age<75, "70 to 74", age.group),
+#          age.group = ifelse(age>=75 & age<80, "75 to 79", age.group),
+#          age.group = ifelse(age>=80 & age<85, "80 to 84", age.group),
+#          age.group = ifelse(age>=85 & age<90, "85 to 89", age.group),
+#          age.group = ifelse(age>=90 & age<95, "90 to 94", age.group),
+#          age.group = ifelse(age==95, "95 plus", age.group))
+# 
+# age_match$age <- as.character(age_match$age)
+# 
+# dt_pop[age_group_name == "<1 year", age_group_name := "0"]
+# dt_pop[age_group_name == "95 plus", age_group_name := "95"]
+# 
+# dt_pop <- merge(dt_pop, age_match, by.x = "age_group_name", by.y = "age", all.x = TRUE)
+# 
+# # Average population by age group (not year because POp comes up to 2019)
+# dt_pop <- dt_pop[,list(population=mean(population)),by=list(location,sex,age.group)]
+# 
+# dt_tfa[,age.group:=age]
+# 
+# # Merge population data with TFA data
+# dt_tfa <- merge(dt_tfa,dt_pop,
+#                 by = c("location","sex","age.group"), all.x = TRUE,all.y = F)
+# 
+# # check not missing population . There are only 1 territories not included in our analysis
+# #dt_check <- unique(dt_sodium[is.na(sodium_current),],by="location")
+# dt_check <- unique(dt_tfa[is.na(population),],by="location")
+# 
+# 
+# # compute mean TFA intake per location
+# dt_tfa_mean <- dt_tfa[, .(tfa_current = weighted.mean(tfa_current,population, na.rm = TRUE),
+#                           tfa_bpp_date_in_effect = min(tfa_bpp_date_in_effect, na.rm = TRUE),
+#                           tfa_bpp_date_passed = min(tfa_bpp_date_passed, na.rm = TRUE)),
+#                       by = list(year,location)]
+# 
+# #dt_tfa_mean_24 <- dt_tfa_mean[year==2024,]
+# 
+# #Most recent data from 2024:2019
+# dt_tfa_mean_24 <- dt_tfa_mean[year %in% c(2024),]
+# dt_tfa_mean_24 <- dt_tfa_mean_24[order(dt_tfa_mean_24$tfa_current,decreasing = T),]
+# dt_tfa_mean_24 <- unique(dt_tfa_mean_24,by="location")
+# 
+# years <- 2025:2050
+# dt_tfa_scenarios <- dt_tfa_mean_24[, {
+#   yearly_data <- data.table(year = years)
+#   yearly_data[, tfa_current := tfa_current]
+#   yearly_data
+# }, by = location]
+# 
+# dt_tfa_scenarios <- rbind(dt_tfa_mean,dt_tfa_scenarios,fill=T)
+# 
+# # Add the tfa_target to the main data table
+# 
+# dt_tfa_scenarios[,c("tfa_bpp_date_in_effect","tfa_bpp_date_passed"):=NULL]
+# dt_tfa_scenarios <- merge(dt_tfa_scenarios, 
+#                           dt_tfa_mean_24[, .(location, tfa_bpp_date_in_effect,tfa_bpp_date_passed)],
+#                           by = "location", all.x = TRUE)
+# 
+# # Fix bpp date for specific locations
+# dt_tfa_scenarios[ , tfa_target := tfa_current]
+# dt_tfa_scenarios[ tfa_bpp_date_passed<=2023 & year>2023 & year<2025 , tfa_target := ifelse(tfa_current<p_tfa_target,tfa_current,p_tfa_target)]
+# #dt_tfa_scenarios[ year>=2025 , tfa_target := 0.005]
+# #dt_tfa_scenarios[ year>=2027 , tfa_target := ifelse(tfa_current<p_tfa_target,tfa_current,p_tfa_target)]
+# 
+# # ensure that once a country reaches 0, its tfa_target remain 0 thereafter.
+# 
+# # Set initial targets to current values
+# dt_tfa_scenarios[, tfa_target := tfa_current]
+# 
+# # If TFA policy is passed before or in 2023, drop to target (0) by 2024
+# dt_tfa_scenarios[
+#   tfa_bpp_date_passed <= 2023 & year >= 2024, 
+#   tfa_target := p_tfa_target
+# ]
+# 
+# # For all countries, once TFA reaches 0, it cannot go up again
+# dt_tfa_scenarios[, tfa_target := 
+#                    ifelse(
+#                      year >= min(year[tfa_target == p_tfa_target], na.rm = TRUE),
+#                      p_tfa_target,
+#                      tfa_target
+#                    ),
+#                  by = location
+# ]
+# 
+# # Optional: also keep tfa_current at 0 after a country hits 0
+# dt_tfa_scenarios[, tfa_current := 
+#                    ifelse(
+#                      year >= min(year[tfa_target == p_tfa_target], na.rm = TRUE),
+#                      p_tfa_target,
+#                      tfa_current
+#                    ),
+#                  by = location
+# ]
+# 
+# dt_tfa_scenarios[ year>=2027 , tfa_target := ifelse(tfa_current<p_tfa_target,tfa_current,p_tfa_target)]
+# 
+# dt_tfa_scenarios <- dt_tfa_scenarios[, .(location, year, tfa_current,tfa_target)]
+# 
+# # Taiwan, Ukraine and other territories are NA, so assigning the minimum value
+# dt_tfa_scenarios[is.na(tfa_target),  tfa_target := p_tfa_target]
+# dt_tfa_scenarios[is.na(tfa_current), tfa_current := p_tfa_target]
+# 
+# # Check country names
+# dt_tfa_scenarios[, location := gsub("United States of America", "United States", location)]
+# dt_tfa_scenarios[location=="Bolivia (Plurinational State of)", location := "Bolivia"]
+# 
+# dt_tfa_scenarios[, location := gsub("Taiwan", "Taiwan (Province of China)", location)]
+# 
+# dt_tfa_scenarios[, location := gsub("United Republic of Tanzania", "Tanzania", location)]
+# 
+# # Fix countries names
+# dt_tfa_scenarios[location == "Türkiye", location := "Turkey"]
+# dt_tfa_scenarios[location == "Côte d'Ivoire", location := "Ivory Coast"]
+# 
+# #print length(locs_statins)
+# locs_tfa <- unique(dt_tfa_scenarios$location)
+# print(paste0("Number of locations with tfa data: ", length(locs_tfa)))
+# 
+# # Save the data
+# saveRDS(dt_tfa_scenarios,file = paste0(wd_data,"TFAPolicy/", "tfa_policy_scenarios.rds"))
+# 
+# # clean up
+# rm(dt_tfa, dt_pop, dt_tfa_mean, dt_tfa_mean_24,
+#    years, dt_tfa_scenarios, name_map, dt_check, age_match)
 

@@ -418,6 +418,8 @@ dt_htn_enrollment[, pop_program := Nx_program]
 # Keep only relevant variables and merge back to b_rates
 dt_htn_enrollment <- dt_htn_enrollment[, .(location, year, age, sex, Nx_program,pop_program)]
 
+saveRDS(dt_htn_enrollment, file = paste0(wd_data,"dt_htn_enrollment.rds"))
+
 b_rates <- merge(b_rates, dt_htn_enrollment, by = c("location", "year", "age", "sex"), all.x = TRUE)
 
 # Assign 1 to Nx_program and pop_program for non-program countries and years <2017
@@ -427,4 +429,4 @@ b_rates[year<2017, Nx_program := 1]
 b_rates[year<2017, pop_program := 1]
 
 # Clean up environment
-rm("dt_htn_control_scenarios", "dt_population_distribution", "dt_htn_enrollment")
+rm("dt_population_distribution", "dt_htn_control_scenarios")

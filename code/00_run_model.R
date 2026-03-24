@@ -108,4 +108,6 @@ source("05_build_baseline.R")
 # 06. Run model ----
 #...........................................................
 
-source("06_run_scenarios.R")
+source("06_run_scenarios_targets.R")
+
+source("06_run_scenarios_assessment.R")

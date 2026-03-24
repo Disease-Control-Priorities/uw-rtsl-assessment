@@ -444,6 +444,22 @@ dt_hbp_control <- readRDS(file = paste0(wd_data,"hbp_control_data.rds"))
 
 dt_hbp_targets <- fread(paste0(wd_data,"htn_control_targets_by_loc.csv"))
 
+# controlled people vay by location and 2017-2025 and projected 2026-2050 for the assesment
+
+dt_htn_control_scenarios <- fread(paste0(wd_data, "htn_control_scenarios_by_loc_year.csv"))
+
+# columns of interest to compare : 1) program control rates "control_rate_program" ,
+#                                   2) Bau counterfactual upper bound impact "control_rate_bau_upper"
+#                                  3) conservative impact estimate "control_rate_bau_conservative"
+
+# Keep only needed columns for the antihypertensive therapy impact calculation
+dt_htn_control_scenarios <- dt_htn_control_scenarios[, .(location, year, control_rate_program, 
+                                                         control_rate_bau_upper, control_rate_bau_conservative)]
+
+
+# Load enrolled population data
+dt_htn_enrollment <- readRDS(file = paste0(wd_data,"dt_htn_enrollment.rds"))
+
 calculate_antihypertensive_impact_etihad <- function(intervention_rates, 
                                                      Country, 
                                                      DT.in,
@@ -839,14 +855,7 @@ calculate_sodium_impact_etihad <- function(intervention_rates,
 ## TFA Policy ----
 #...........................................................
 
-dt_tfa_scenarios <- as.data.table(readRDS(file = paste0(wd_data,"tfa_policy_scenarios.rds")))
-
-# subset from base year   
-dt_tfa_scenarios <- dt_tfa_scenarios[year>=2017,]
-
-# Convert to percent scale
-dt_tfa_scenarios[, tfa_current := tfa_current * 100]
-dt_tfa_scenarios[, tfa_target  := tfa_target * 100]
+dt_tfa_scenarios <- as.data.table(readRDS(file = paste0(wd_data,"tfa_policy_scenarios_assessment.rds")))
 
 # Function to calculate IHD mortality reduction from trans fat intake reduction
 
@@ -854,7 +863,7 @@ calculate_tfa_impact <- function(dt_tfa_scenarios,
                                  intervention_rates,
                                  Country,
                                  target_tfa = 0,
-                                 policy_start_year = 2027) {
+                                 policy_start_year = 2051) {
   cat("  - Calculating TFA impact\n")
   
   #..................................
@@ -876,7 +885,13 @@ calculate_tfa_impact <- function(dt_tfa_scenarios,
   #  - After policy start year  then  difference between current and target
   #..................................
   
-  dt[, delta := 0]
+  # dt[, delta := 0]
+  # dt[year >= policy_start_year, delta := pmax(tfa_current - target_tfa, 0)]
+  
+  # For this assessment exercise tfa_target is vectorized and included in dt_tfa_scenarios, 
+  # so we can calculate delta directly without a fixed target_tfa
+  dt[, delta := pmax(tfa_current - tfa_target, 0)]
+  
   dt[year >= policy_start_year, delta := pmax(tfa_current - target_tfa, 0)]
   
   #..................................
@@ -1648,7 +1663,6 @@ run_multiple_scenarios <- function(Country,
 }
 
 
-
 # The three HTN target columns to loop over
 htn_target_cols <- c("htncov2_aspirational", "htncov2_ambitious", "htncov2_progress")
 
@@ -1666,8 +1680,8 @@ all_results <- run_multiple_scenarios(
   scenario_list = scenarios,
   #explicit hypertension control parameters
   target_control = 0.5,
-  control_start_year = 2017,
-  control_target_year = 2024,
+  control_start_year = 2026,
+  control_target_year = 2040,
   # explicit statins parameters
   statin_target_coverage = 0.60,
   statin_start_year      = 2026,
@@ -1686,7 +1700,7 @@ all_results <- run_multiple_scenarios(
   drugcov = "p75",
   baseline_ctrl       = NULL,
   baseline_statin_coverage = NULL,
-  htn_target_col = "htncov2_ambitious",
+  htn_target_col = "htncov2_aspirational",
   dt_hbp_targets = dt_hbp_targets
 )
 
@@ -1773,7 +1787,7 @@ calculate_cumulative_impact <- function(results_dt,
 cumulative_deaths <- calculate_cumulative_impact(
   all_results,
   metric = "dead",
-  start_year = 2017,
+  start_year = 2026,
   end_year = 2050
 )
 
