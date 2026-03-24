@@ -451,11 +451,10 @@ dt_htn_control_scenarios <- fread(paste0(wd_data, "htn_control_scenarios_by_loc_
 
 # columns of interest to compare : 1) program control rates "control_rate_program" ,
 #                                   2) Bau counterfactual upper bound impact "control_rate_bau_upper"
-#                                  3) conservative impact estimate "control_rate_bau_conservative"
 
 # Keep only needed columns
 dt_htn_control_scenarios <- dt_htn_control_scenarios[, .(location, year, control_rate_program, 
-                                                         control_rate_bau_upper, control_rate_bau_conservative)]
+                                                         control_rate_bau_upper)]
 
 # Program enrollment population (facility-level Nx and pop)
 # Used ONLY in program-rate mode — national Nx/pop are unaffected for target-based runs
@@ -643,9 +642,9 @@ calculate_antihypertensive_impact_etihad <- function(intervention_rates,
 # control-rate vectors (program vs counterfactual) instead of generating
 # a linear scale-up trajectory from baseline → target.
 #
-# It is called TWICE per country when use_program_rates = TRUE:
-#   1) control_rate = control_rate_program  (observed program)
-#   2) control_rate = control_rate_bau_*    (counterfactual)
+# This function is called TWICE per country when use_program_rates = TRUE:
+#   1) control_rate = control_rate_program    (observed program)
+#   2) control_rate = control_rate_bau_upper  (BAU counterfactual)
 # The difference between the two runs gives the program-attributable impact.
 
 calculate_antihypertensive_impact_program <- function(intervention_rates,
@@ -1899,10 +1898,10 @@ run_multiple_scenarios <- function(Country,
 #...........................................................
 ## Program-Impact Runner (NEW) ----
 #...........................................................
-# Convenience wrapper: runs Program vs BAU-upper and Program vs BAU-conservative
-# comparisons for a single country using dt_htn_control_scenarios.
-# Returns a list with two result tables, each containing a "program" and
-# a "bau_*" scenario that can be differenced downstream.
+# Runs the model twice for one country:
+#   1) with control_rate_program   → rate_scenario = "program"
+#   2) with control_rate_bau_upper → rate_scenario = "bau_upper"
+# Returns a single data.table with both runs stacked (differentiated by rate_scenario).
 
 run_program_impact_scenarios <- function(Country,
                                          scenario_list,
@@ -1931,78 +1930,47 @@ run_program_impact_scenarios <- function(Country,
     return(NULL)
   }
 
-  vec_program      <- dt_loc[, .(year, control_rate = control_rate_program)]
-  vec_bau_upper    <- dt_loc[, .(year, control_rate = control_rate_bau_upper)]
-  vec_bau_conserv  <- dt_loc[, .(year, control_rate = control_rate_bau_conservative)]
+  vec_program   <- dt_loc[, .(year, control_rate = control_rate_program)]
+  vec_bau_upper <- dt_loc[, .(year, control_rate = control_rate_bau_upper)]
 
-  # Helper: run one comparison (program vs one counterfactual)
-  run_one_comparison <- function(program_vec, counterfactual_vec, cf_label) {
-
-    cat("\n============================================================\n")
-    cat("PROGRAM-IMPACT:", Country, " — Program vs", cf_label, "\n")
-    cat("============================================================\n")
-
-    # Run with program control rates
-    res_program <- run_multiple_scenarios(
-      Country             = Country,
-      scenario_list       = scenario_list,
-      target_control      = 0,           # ignored in program-rate mode
-      control_start_year  = 0,           # ignored
-      control_target_year = 0,           # ignored
-      statin_target_coverage   = statin_target_coverage,
-      statin_start_year        = statin_start_year,
-      statin_target_year       = statin_target_year,
-      adherence_ir             = adherence_ir,
-      adherence_cf             = adherence_cf,
-      saltmet   = saltmet,
-      salteff   = salteff,
-      saltyear1 = saltyear1,
-      saltyear2 = saltyear2,
-      tfa_target_tfa        = tfa_target_tfa,
-      tfa_policy_start_year = tfa_policy_start_year,
-      drugcov                  = drugcov,
-      baseline_ctrl            = baseline_ctrl,
-      baseline_statin_coverage = baseline_statin_coverage,
-      use_program_rates   = TRUE,
-      control_rate_vector = program_vec,
-      dt_htn_enrollment   = dt_htn_enrollment
-    )
-    res_program[, rate_scenario := "program"]
-
-    # Run with counterfactual control rates
-    res_cf <- run_multiple_scenarios(
-      Country             = Country,
-      scenario_list       = scenario_list,
-      target_control      = 0,
-      control_start_year  = 0,
-      control_target_year = 0,
-      statin_target_coverage   = statin_target_coverage,
-      statin_start_year        = statin_start_year,
-      statin_target_year       = statin_target_year,
-      adherence_ir             = adherence_ir,
-      adherence_cf             = adherence_cf,
-      saltmet   = saltmet,
-      salteff   = salteff,
-      saltyear1 = saltyear1,
-      saltyear2 = saltyear2,
-      tfa_target_tfa        = tfa_target_tfa,
-      tfa_policy_start_year = tfa_policy_start_year,
-      drugcov                  = drugcov,
-      baseline_ctrl            = baseline_ctrl,
-      baseline_statin_coverage = baseline_statin_coverage,
-      use_program_rates   = TRUE,
-      control_rate_vector = counterfactual_vec,
-      dt_htn_enrollment   = dt_htn_enrollment
-    )
-    res_cf[, rate_scenario := cf_label]
-
-    rbindlist(list(res_program, res_cf), fill = TRUE)
-  }
-
-  list(
-    program_vs_bau_upper       = run_one_comparison(vec_program, vec_bau_upper,       "bau_upper"),
-    program_vs_bau_conservative = run_one_comparison(vec_program, vec_bau_conserv, "bau_conservative")
+  # Shared arguments for both runs
+  shared_args <- list(
+    Country             = Country,
+    scenario_list       = scenario_list,
+    target_control      = 0,           # ignored in program-rate mode
+    control_start_year  = 0,           # ignored
+    control_target_year = 0,           # ignored
+    statin_target_coverage   = statin_target_coverage,
+    statin_start_year        = statin_start_year,
+    statin_target_year       = statin_target_year,
+    adherence_ir             = adherence_ir,
+    adherence_cf             = adherence_cf,
+    saltmet   = saltmet,
+    salteff   = salteff,
+    saltyear1 = saltyear1,
+    saltyear2 = saltyear2,
+    tfa_target_tfa        = tfa_target_tfa,
+    tfa_policy_start_year = tfa_policy_start_year,
+    drugcov                  = "p75",
+    baseline_ctrl            = baseline_ctrl,
+    baseline_statin_coverage = baseline_statin_coverage,
+    use_program_rates        = TRUE,
+    dt_htn_enrollment        = dt_htn_enrollment
   )
+
+  # Run 1: Program control rates
+  cat("\n=== Program run:", Country, "===\n")
+  res_program <- do.call(run_multiple_scenarios,
+                         c(shared_args, list(control_rate_vector = vec_program)))
+  res_program[, rate_scenario := "program"]
+
+  # Run 2: BAU upper counterfactual
+  cat("\n=== BAU-upper run:", Country, "===\n")
+  res_bau <- do.call(run_multiple_scenarios,
+                     c(shared_args, list(control_rate_vector = vec_bau_upper)))
+  res_bau[, rate_scenario := "bau_upper"]
+
+  rbindlist(list(res_program, res_bau), fill = TRUE)
 }
 
 
@@ -2019,57 +1987,55 @@ scenarios <- list(
   bp_tfa = c("antihypertensive", "tfa")
 )
 
-all_results <- run_multiple_scenarios(
-  Country = "India",
-  scenario_list = scenarios,
-  #explicit hypertension control parameters
-  target_control = 0.14,
-  control_start_year = 2017,
-  control_target_year = 2025,
-  # explicit statins parameters
-  statin_target_coverage = 0.60,
-  statin_start_year      = 2026,
-  statin_target_year     = 2050,
-  adherence_ir = 0.575,
-  adherence_cf = 0.664,
-  #explicit sodium reduction parameters
-  saltmet = "percent",
-  salteff = 0.3,
-  saltyear1 = 2026,
-  saltyear2 = 2030,
-  # explicit TFA parameters (NEW)
-  tfa_target_tfa        = 0,    # 0% of energy from TFA
-  tfa_policy_start_year = 2051, # <-- flexible start year (2026 lagged two years)
-  #Implicit hypertension control parameters
-  drugcov = "p75",
-  baseline_ctrl       = 0,
-  baseline_statin_coverage = NULL,
-  htn_target_col = "control_rate_program",
-  dt_hbp_targets = dt_hbp_targets
-)
+# all_results <- run_multiple_scenarios(
+#   Country = "India",
+#   scenario_list = scenarios,
+#   #explicit hypertension control parameters
+#   target_control = 0.14,
+#   control_start_year = 2017,
+#   control_target_year = 2025,
+#   # explicit statins parameters
+#   statin_target_coverage = 0.60,
+#   statin_start_year      = 2026,
+#   statin_target_year     = 2050,
+#   adherence_ir = 0.575,
+#   adherence_cf = 0.664,
+#   #explicit sodium reduction parameters
+#   saltmet = "percent",
+#   salteff = 0.3,
+#   saltyear1 = 2026,
+#   saltyear2 = 2030,
+#   # explicit TFA parameters (NEW)
+#   tfa_target_tfa        = 0,    # 0% of energy from TFA
+#   tfa_policy_start_year = 2051, # <-- flexible start year (2026 lagged two years)
+#   #Implicit hypertension control parameters
+#   drugcov = "p75",
+#   baseline_ctrl       = 0,
+#   baseline_statin_coverage = NULL,
+#   htn_target_col = "control_rate_program",
+#   dt_hbp_targets = dt_hbp_targets
+# )
 
-all_results <- run_program_impact_scenarios(
-  Country                  = "India",
-  scenario_list            = scenarios,
-  dt_htn_control_scenarios = dt_htn_control_scenarios,
-  dt_htn_enrollment        = dt_htn_enrollment,
-  statin_target_coverage   = 0.60,
-  statin_start_year        = 2026,
-  statin_target_year       = 2050,
-  adherence_ir             = 1,
-  adherence_cf             = 1,
-  saltmet                  = "percent",
-  salteff                  = 0,
-  saltyear1                = 2026,
-  saltyear2                = 2030,
-  tfa_target_tfa           = 0,
-  tfa_policy_start_year    = 2051,
-  drugcov                  = drugcov,
-  baseline_ctrl            = NULL,
-  baseline_statin_coverage = NULL
-)
-
-all_results_dt <- rbindlist(all_results, idcol = "comparison")
+# all_results <- run_program_impact_scenarios(
+#   Country                  = "India",
+#   scenario_list            = scenarios,
+#   dt_htn_control_scenarios = dt_htn_control_scenarios,
+#   dt_htn_enrollment        = dt_htn_enrollment,
+#   statin_target_coverage   = 0.60,
+#   statin_start_year        = 2026,
+#   statin_target_year       = 2050,
+#   adherence_ir             = 1,
+#   adherence_cf             = 1,
+#   saltmet                  = "percent",
+#   salteff                  = 0,
+#   saltyear1                = 2026,
+#   saltyear2                = 2030,
+#   tfa_target_tfa           = 0,
+#   tfa_policy_start_year    = 2051,
+#   drugcov                  = "p75",
+#   baseline_ctrl            = NULL,
+#   baseline_statin_coverage = NULL
+# )
 
 #...........................................................
 ## Comparison Helper Functions ----
@@ -2151,21 +2117,21 @@ calculate_cumulative_impact <- function(results_dt,
 }
 
 # # Example:
-cumulative_deaths <- calculate_cumulative_impact(
-  all_results,
-  metric = "dead",
-  start_year = 2017,
-  end_year = 2050
-)
+# cumulative_deaths <- calculate_cumulative_impact(
+#   all_results,
+#   metric = "dead",
+#   start_year = 2017,
+#   end_year = 2050
+# )
 
-# # Example:
-cumulative_deaths <- calculate_cumulative_impact(
-  all_results_dt[rate_scenario=="bau_upper",],
-  metric = "dead",
-  start_year = 2017,
-  end_year = 2050
-)
-
+# # # Example:
+# cumulative_deaths <- calculate_cumulative_impact(
+#   all_results[rate_scenario=="bau_upper",],
+#   metric = "dead",
+#   start_year = 2017,
+#   end_year = 2050
+# )
+# 
 
 #...........................................................
 ## Validation Helper ----
@@ -2251,16 +2217,18 @@ validate_intervention_results <- function(results_dt) {
 
 # explicit hypertension control parameters
 target_control <- 0.5
-control_start_year <- 2026
-control_target_year <- 2030
+control_start_year <- 2017
+control_target_year <- 2025
 
 # HTN target columns in dt_hbp_targets
 htn_target_cols <- c("htncov2_aspirational", "htncov2_ambitious", "htncov2_progress")
 
-# Scenarios: baseline + antihypertensive only (you can expand this list with more combinations as needed)
-scenarios_htn <- list(
+# Scenarios: baseline + antihypertensive + TFA
+scenarios <- list(
   baseline = character(0),
-  bp_only = "antihypertensive"
+  bp_only = "antihypertensive",
+  tfa_only = "tfa",
+  bp_tfa = c("antihypertensive", "tfa")
 )
 
 # explicit sodium reduction parameters
@@ -2272,7 +2240,7 @@ drugcov <- "p75"
 
 ## TFA (NEW explicit params)
 tfa_target_tfa        <- 0         # target % energy from TFA
-tfa_policy_start_year <- 2028      # flexible start year (effect laget two years)
+tfa_policy_start_year <- 2051      # flexible start year (effect laget two years)
 
 ## Statins (NEW explicit params to match calculate_statins_impact)
 statin_target_coverage <- 0.60
@@ -2341,96 +2309,95 @@ clusterEvalQ(cl, {
 locs <- unique(data.in$location)
 locs <- locs[!locs %in% c("Greenland", "Bermuda")]  # Exclusions
 
-# locs <- c("China", "India", "Russian Federation",
-#           "United States","Colombia","France","Australia","Nigeria")
+locs <- c("China", "India")
 
-#...........................................................
-## Parallel execution: loop over countries × target scenarios ----
-#...........................................................
-
-
-# One job per (country, target_col)
-jobs <- CJ(location = locs, target_col = htn_target_cols)
-
-time_start <- Sys.time()
-
-results_list <- foreach(
-  job_idx        = seq_len(nrow(jobs)),
-  .packages      = c("data.table", "dplyr"),
-  .errorhandling = "pass",
-  .verbose       = TRUE
-) %dopar% {
-  
-  country    <- jobs$location[job_idx]
-  target_col <- jobs$target_col[job_idx]
-  
-  log_file <- file.path(
-    wd_outp, "out_model",
-    paste0("log_", country, "_", target_col, ".txt")
-  )
-  sink(log_file, split = FALSE)
-  
-  cat("\n==============================\n")
-  cat("Country      :", country,    "\n")
-  cat("Target column:", target_col, "\n")
-  cat("Time         :", as.character(Sys.time()), "\n")
-  cat("==============================\n")
-  
-  res <- tryCatch({
-    run_multiple_scenarios(
-      Country             = country,
-      scenario_list       = scenarios_htn,
-      target_control      = 0.5,           # fallback if country not in dt_hbp_targets
-      control_start_year  = control_start_year,
-      control_target_year = control_target_year,
-      drugcov             = drugcov,
-      baseline_ctrl       = NULL,          # inferred from dt_hbp_control
-      dt_hbp_targets      = dt_hbp_targets,
-      htn_target_col      = target_col,    # key: drives which column is read
-      statin_target_coverage   = 0.60,
-      statin_start_year        = 2026,
-      statin_target_year       = 2050,
-      adherence_ir             = 1,
-      adherence_cf             = 1,
-      baseline_statin_coverage = NULL,
-      saltmet   = "percent",
-      salteff   = 0,                       # no sodium reduction
-      saltyear1 = 2026,
-      saltyear2 = 2030,
-      tfa_target_tfa        = 0,
-      tfa_policy_start_year = 2050
-    )
-  }, error = function(e) {
-    cat("ERROR in", country, "/", target_col, ":", e$message, "\n")
-    return(NULL)
-  })
-  
-  if (!is.null(res)) {
-    res[, htn_target_scenario := target_col]
-    
-    output_file <- file.path(
-      wd_outp, "out_model",
-      paste0("model_output_", country, "_", target_col, ".rds")
-    )
-    saveRDS(res, file = output_file)
-    cat("Saved:", output_file, "\n")
-  } else {
-    cat("No results to save for", country, "/", target_col, "\n")
-  }
-  
-  sink()
-  res
-}
-
-time_end <- Sys.time()
-cat("Total runtime:", round(difftime(time_end, time_start, units = "mins"), 1), "minutes\n")
-
-stopCluster(cl)
-
-# Check which countries succeeded
-successful <- sapply(results_list, function(x) !is.null(x))
-cat("\nSuccessful runs:", sum(successful), "out of", length(locs), "\n")
-cat("Failed countries:", paste(locs[!successful], collapse = ", "), "\n")
+# #...........................................................
+# ## Parallel execution: loop over countries × target scenarios ----
+# #...........................................................
+# 
+# 
+# # One job per (country, target_col)
+# jobs <- CJ(location = locs, target_col = htn_target_cols)
+# 
+# time_start <- Sys.time()
+# 
+# results_list <- foreach(
+#   job_idx        = seq_len(nrow(jobs)),
+#   .packages      = c("data.table", "dplyr"),
+#   .errorhandling = "pass",
+#   .verbose       = TRUE
+# ) %dopar% {
+#   
+#   country    <- jobs$location[job_idx]
+#   target_col <- jobs$target_col[job_idx]
+#   
+#   log_file <- file.path(
+#     wd_outp, "out_model",
+#     paste0("log_", country, "_", target_col, ".txt")
+#   )
+#   sink(log_file, split = FALSE)
+#   
+#   cat("\n==============================\n")
+#   cat("Country      :", country,    "\n")
+#   cat("Target column:", target_col, "\n")
+#   cat("Time         :", as.character(Sys.time()), "\n")
+#   cat("==============================\n")
+#   
+#   res <- tryCatch({
+#     run_multiple_scenarios(
+#       Country             = country,
+#       scenario_list       = scenarios_htn,
+#       target_control      = 0.5,           # fallback if country not in dt_hbp_targets
+#       control_start_year  = control_start_year,
+#       control_target_year = control_target_year,
+#       drugcov             = drugcov,
+#       baseline_ctrl       = NULL,          # inferred from dt_hbp_control
+#       dt_hbp_targets      = dt_hbp_targets,
+#       htn_target_col      = target_col,    # key: drives which column is read
+#       statin_target_coverage   = 0.60,
+#       statin_start_year        = 2026,
+#       statin_target_year       = 2050,
+#       adherence_ir             = 1,
+#       adherence_cf             = 1,
+#       baseline_statin_coverage = NULL,
+#       saltmet   = "percent",
+#       salteff   = 0,                       # no sodium reduction
+#       saltyear1 = 2026,
+#       saltyear2 = 2030,
+#       tfa_target_tfa        = 0,
+#       tfa_policy_start_year = 2050
+#     )
+#   }, error = function(e) {
+#     cat("ERROR in", country, "/", target_col, ":", e$message, "\n")
+#     return(NULL)
+#   })
+#   
+#   if (!is.null(res)) {
+#     res[, htn_target_scenario := target_col]
+#     
+#     output_file <- file.path(
+#       wd_outp, "out_model",
+#       paste0("model_output_", country, "_", target_col, ".rds")
+#     )
+#     saveRDS(res, file = output_file)
+#     cat("Saved:", output_file, "\n")
+#   } else {
+#     cat("No results to save for", country, "/", target_col, "\n")
+#   }
+#   
+#   sink()
+#   res
+# }
+# 
+# time_end <- Sys.time()
+# cat("Total runtime:", round(difftime(time_end, time_start, units = "mins"), 1), "minutes\n")
+# 
+# stopCluster(cl)
+# 
+# # Check which countries succeeded
+# successful <- sapply(results_list, function(x) !is.null(x))
+# cat("\nSuccessful runs:", sum(successful), "out of", length(locs), "\n")
+# cat("Failed countries:", paste(locs[!successful], collapse = ", "), "\n")
 
 # Combine all results (if not too large)
 #all_results <- rbindlist(results_list, fill = TRUE)
@@ -2439,8 +2406,7 @@ cat("Failed countries:", paste(locs[!successful], collapse = ", "), "\n")
 ## Parallel execution: Program-impact scenarios ----
 #...........................................................
 # This runs the NEW program-rate mode for countries that have
-# data in dt_htn_control_scenarios.  It produces Program vs BAU-upper
-# and Program vs BAU-conservative comparisons.
+# data in dt_htn_control_scenarios.  It produces Program vs BAU-upper.
 # The target-based loop above is UNAFFECTED.
 
 # Countries with program-rate data
@@ -2490,7 +2456,7 @@ if (length(locs_program) > 0) {
         "dt_tfa_scenarios",
         "dt_statin_scenarios",
         "dt_af_statins",
-        "scenarios_htn",
+        "scenarios",
         "wd_outp",
         "drugcov"
       ),
@@ -2528,7 +2494,7 @@ if (length(locs_program) > 0) {
     res <- tryCatch({
       run_program_impact_scenarios(
         Country                  = country,
-        scenario_list            = scenarios_htn,
+        scenario_list            = scenarios,
         dt_htn_control_scenarios = dt_htn_control_scenarios,
         dt_htn_enrollment        = dt_htn_enrollment,
         statin_target_coverage   = 0.60,
@@ -2541,8 +2507,8 @@ if (length(locs_program) > 0) {
         saltyear1 = 2026,
         saltyear2 = 2030,
         tfa_target_tfa        = 0,
-        tfa_policy_start_year = 2028,
-        drugcov                  = drugcov,
+        tfa_policy_start_year = 2051,
+        drugcov                  = "p75",
         baseline_ctrl            = NULL,
         baseline_statin_coverage = NULL
       )
@@ -2552,14 +2518,12 @@ if (length(locs_program) > 0) {
     })
 
     if (!is.null(res)) {
-      for (comp_name in names(res)) {
-        output_file <- file.path(
-          wd_outp, "out_model",
-          paste0("model_output_", country, "_", comp_name, ".rds")
-        )
-        saveRDS(res[[comp_name]], file = output_file)
-        cat("Saved:", output_file, "\n")
-      }
+      output_file <- file.path(
+        wd_outp, "out_model",
+        paste0("model_output_", country, "_program_impact.rds")
+      )
+      saveRDS(res, file = output_file)
+      cat("Saved:", output_file, "\n")
     } else {
       cat("No program-impact results for", country, "\n")
     }
