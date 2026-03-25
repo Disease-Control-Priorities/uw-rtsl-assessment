@@ -2249,67 +2249,67 @@ statin_target_year     <- 2050
 adherence_ir <-  0.575
 adherence_cf <- 0.664
 
-#baseline_statin_coverage <- NULL   # let project.all infer from dt_statin_scenarios
-
+# #baseline_statin_coverage <- NULL   # let project.all infer from dt_statin_scenarios
+# 
 # 2. Detect and start cluster
 ncores <- 6
 cl     <- makeCluster(ncores)
 registerDoParallel(cl)
-
-clusterExport(
-  cl,
-  varlist = c(
-    "project.all",
-    "run_multiple_scenarios",
-    "run_program_impact_scenarios",
-    "get.bp.prob",
-    "get_gbd_relative_risks",
-    "expand_to_single_year_ages",
-    "calculate_baseline_incidence_gbd",
-    "calculate_etihad_cumulative_rr",
-    "calculate_coverage_by_year",
-    "add_coverage_by_year",
-    "calculate_aggregate_coverage",
-    "apply_coverage_adjustment",
-    "calculate_antihypertensive_impact_etihad",
-    "calculate_antihypertensive_impact_program",
-    "calculate_sodium_impact_etihad",
-    "calculate_tfa_impact",
-    "calculate_statins_impact",
-    "repYear",
-    "data.in",
-    "b_rates",
-    "inc",
-    "dt_hbp_control",
-    "dt_hbp_targets",
-    "dt_htn_control_scenarios",
-    "dt_htn_enrollment",
-    "dt_gbd_rr",
-    "ETIHAD_RR",
-    "ETIHAD_RR_BIN",
-    "dt_tfa_scenarios",
-    "dt_statin_scenarios",
-    "dt_af_statins",
-    "scenarios",
-    "wd_outp",
-    "control_start_year",
-    "control_target_year",
-    "drugcov",
-    "htn_target_cols"
-  ),
-  envir = globalenv()
-)
-
-clusterEvalQ(cl, {
-  library(data.table)
-  library(dplyr)
-})
-
-# 5. Define your countries and scenarios
-locs <- unique(data.in$location)
-locs <- locs[!locs %in% c("Greenland", "Bermuda")]  # Exclusions
-
-# locs <- c("China", "India")
+# 
+# clusterExport(
+#   cl,
+#   varlist = c(
+#     "project.all",
+#     "run_multiple_scenarios",
+#     "run_program_impact_scenarios",
+#     "get.bp.prob",
+#     "get_gbd_relative_risks",
+#     "expand_to_single_year_ages",
+#     "calculate_baseline_incidence_gbd",
+#     "calculate_etihad_cumulative_rr",
+#     "calculate_coverage_by_year",
+#     "add_coverage_by_year",
+#     "calculate_aggregate_coverage",
+#     "apply_coverage_adjustment",
+#     "calculate_antihypertensive_impact_etihad",
+#     "calculate_antihypertensive_impact_program",
+#     "calculate_sodium_impact_etihad",
+#     "calculate_tfa_impact",
+#     "calculate_statins_impact",
+#     "repYear",
+#     "data.in",
+#     "b_rates",
+#     "inc",
+#     "dt_hbp_control",
+#     "dt_hbp_targets",
+#     "dt_htn_control_scenarios",
+#     "dt_htn_enrollment",
+#     "dt_gbd_rr",
+#     "ETIHAD_RR",
+#     "ETIHAD_RR_BIN",
+#     "dt_tfa_scenarios",
+#     "dt_statin_scenarios",
+#     "dt_af_statins",
+#     "scenarios",
+#     "wd_outp",
+#     "control_start_year",
+#     "control_target_year",
+#     "drugcov",
+#     "htn_target_cols"
+#   ),
+#   envir = globalenv()
+# )
+# 
+# clusterEvalQ(cl, {
+#   library(data.table)
+#   library(dplyr)
+# })
+# 
+# # 5. Define your countries and scenarios
+# locs <- unique(data.in$location)
+# locs <- locs[!locs %in% c("Greenland", "Bermuda")]  # Exclusions
+# 
+# # locs <- c("China", "India")
 
 # #...........................................................
 # ## Parallel execution: loop over countries × target scenarios ----

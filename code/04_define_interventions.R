@@ -35,6 +35,15 @@ dt_enrolled <- melt(
 dt_enrolled[, year := as.integer(as.character(year))]
 setnames(dt_enrolled, "Country", "location")
 
+# Imputation to not misss countries
+
+dt_enrolled[, enrolled_org := as.numeric(enrolled)]
+dt_enrolled[is.na(start_year) & is.na(enrolled), enrolled := 1]
+dt_enrolled[is.na(start_year) & is.na(enrolled_org), start_year := 2026]
+
+# remove temp variable
+dt_enrolled[, enrolled_org := NULL]
+
 # -- 3. Import population with BP control by location and year
 dt_controlled_wide <- as.data.table(
   read_excel(htn_tracker_file,
@@ -97,13 +106,14 @@ dt_htn_program[, control_rate := pmin(1, pmax(0, control_rate))]
 # -- 6. Computing growth rates in enrolled population and control rates by location
 # Year-over-year growth rate for enrolled: (enrolled_t / enrolled_{t-1}) - 1
 # Year-over-year change in control rate:   control_rate_t - control_rate_{t-1}
+
 dt_htn_program[, `:=`(
   enrolled_prev     = shift(enrolled,     n = 1, type = "lag"),
   control_rate_prev = shift(control_rate, n = 1, type = "lag")
 ), by = location]
 
 dt_htn_program[, `:=`(
-  enrolled_growth_rate  = fifelse(
+  enrolled_growth_rate = fifelse(
     !is.na(enrolled) & !is.na(enrolled_prev) & enrolled_prev > 0,
     enrolled / enrolled_prev - 1,
     NA_real_
@@ -115,25 +125,29 @@ dt_htn_program[, `:=`(
   )
 )]
 
-# Median growth rates by location (across available years)
+# Median growth in enrolled by location
 dt_htn_growth <- dt_htn_program[
   !is.na(enrolled_growth_rate),
   .(median_enrolled_growth = median(enrolled_growth_rate, na.rm = TRUE)),
   by = location
 ]
 
-dt_ctrl_growth <- dt_htn_program[
-  !is.na(control_rate_change),
-  .(median_ctrl_change = median(control_rate_change, na.rm = TRUE)),
+# Control-rate history summary by location
+dt_ctrl_info <- dt_htn_program[
+  !is.na(control_rate),
+  .(
+    n_obs_control      = .N,
+    first_obs_year     = min(year),
+    first_obs_control  = control_rate[which.min(year)],
+    median_ctrl_change = if (.N >= 2) median(diff(control_rate[order(year)]), na.rm = TRUE) else NA_real_
+  ),
   by = location
 ]
 
-dt_htn_program <- merge(dt_htn_program, dt_htn_growth, by = "location", all.x = TRUE)
-dt_htn_program <- merge(dt_htn_program, dt_ctrl_growth, by = "location", all.x = TRUE)
+dt_htn_program <- merge(dt_htn_program, dt_htn_growth,   by = "location", all.x = TRUE)
+dt_htn_program <- merge(dt_htn_program, dt_ctrl_info,    by = "location", all.x = TRUE)
 
-# -- 7. Impute missing data based on growth rates
-# Forward-fill enrolled using median growth rate where gaps exist
-# Forward-fill control rate using median change in control rate
+# -- 7. Impute missing data based on growth rates / single-observation fallback
 setorder(dt_htn_program, location, year)
 
 dt_htn_program[, `:=`(
@@ -141,32 +155,65 @@ dt_htn_program[, `:=`(
   control_rate_imputed = as.numeric(control_rate)
 )]
 
-# Forward imputation: carry forward using location-specific growth rates
 locations_htn <- unique(dt_htn_program$location)
 
 for (loc in locations_htn) {
   idx <- which(dt_htn_program$location == loc)
-  for (i in seq_along(idx)[-1]) {
-    row_cur  <- idx[i]
-    row_prev <- idx[i - 1]
+  
+  for (i in seq_along(idx)) {
+    row_cur <- idx[i]
     
-    # Impute enrolled if missing but previous value and growth rate available
-    if (is.na(dt_htn_program$enrolled_imputed[row_cur]) &
-        !is.na(dt_htn_program$enrolled_imputed[row_prev]) &
-        !is.na(dt_htn_program$median_enrolled_growth[row_cur])) {
-      dt_htn_program$enrolled_imputed[row_cur] <-
-        dt_htn_program$enrolled_imputed[row_prev] *
-        (1 + dt_htn_program$median_enrolled_growth[row_cur])
+    # ---------------------------
+    # ENROLLED: forward imputation
+    # ---------------------------
+    if (i > 1) {
+      row_prev <- idx[i - 1]
+      
+      if (is.na(dt_htn_program$enrolled_imputed[row_cur]) &&
+          !is.na(dt_htn_program$enrolled_imputed[row_prev]) &&
+          !is.na(dt_htn_program$median_enrolled_growth[row_cur])) {
+        dt_htn_program$enrolled_imputed[row_cur] <-
+          dt_htn_program$enrolled_imputed[row_prev] *
+          (1 + dt_htn_program$median_enrolled_growth[row_cur])
+      }
     }
     
-    # Impute control rate if missing but previous value and change rate available
-    if (is.na(dt_htn_program$control_rate_imputed[row_cur]) &
-        !is.na(dt_htn_program$control_rate_imputed[row_prev]) &
-        !is.na(dt_htn_program$median_ctrl_change[row_cur])) {
-      dt_htn_program$control_rate_imputed[row_cur] <- pmin(1, pmax(0,
-                                                                   dt_htn_program$control_rate_imputed[row_prev] +
-                                                                     dt_htn_program$median_ctrl_change[row_cur]
-      ))
+    # -----------------------------------------
+    # CONTROL RATE: two cases
+    # 1) >=2 observations -> forward using median annual change
+    # 2) exactly 1 observation -> carry that value forward to 2025
+    # -----------------------------------------
+    if (is.na(dt_htn_program$control_rate_imputed[row_cur])) {
+      
+      # Case 1: enough history to estimate own trend
+      if (!is.na(dt_htn_program$n_obs_control[row_cur]) &&
+          dt_htn_program$n_obs_control[row_cur] >= 2 &&
+          i > 1) {
+        
+        row_prev <- idx[i - 1]
+        
+        if (!is.na(dt_htn_program$control_rate_imputed[row_prev]) &&
+            !is.na(dt_htn_program$median_ctrl_change[row_cur])) {
+          dt_htn_program$control_rate_imputed[row_cur] <- pmin(
+            1, pmax(0,
+                    dt_htn_program$control_rate_imputed[row_prev] +
+                      dt_htn_program$median_ctrl_change[row_cur])
+          )
+        }
+      }
+      
+      # Case 2: only one observed value -> carry forward constant after first observed year
+      if (!is.na(dt_htn_program$n_obs_control[row_cur]) &&
+          dt_htn_program$n_obs_control[row_cur] == 1 &&
+          !is.na(dt_htn_program$first_obs_year[row_cur]) &&
+          !is.na(dt_htn_program$first_obs_control[row_cur]) &&
+          dt_htn_program$year[row_cur] > dt_htn_program$first_obs_year[row_cur] &&
+          dt_htn_program$year[row_cur] <= 2025) {
+        
+        dt_htn_program$control_rate_imputed[row_cur] <- pmin(
+          1, pmax(0, dt_htn_program$first_obs_control[row_cur])
+        )
+      }
     }
   }
 }
@@ -175,7 +222,10 @@ for (loc in locations_htn) {
 dt_htn_program[, bp_controlled_imputed := enrolled_imputed * control_rate_imputed]
 
 # Drop working columns
-dt_htn_program[, c("enrolled_prev", "control_rate_prev") := NULL]
+dt_htn_program[, c(
+  "enrolled_prev", "control_rate_prev",
+  "n_obs_control", "first_obs_year", "first_obs_control"
+) := NULL]
 
 # Diagnostics
 cat("=== HTN Program Impact: Diagnostics ===\n")
@@ -187,7 +237,6 @@ cat("  Rows with imputed enrolled:    ", sum(!is.na(dt_htn_program$enrolled_impu
 cat("  Rows with observed control:    ", sum(!is.na(dt_htn_program$bp_controlled)), "\n")
 cat("  Rows with imputed control:     ", sum(!is.na(dt_htn_program$bp_controlled_imputed) &
                                                is.na(dt_htn_program$bp_controlled)), "\n")
-
 # Save output
 fwrite(dt_htn_program, paste0(wd_data, "htn_program_impact_by_loc_year.csv"))
 cat("Written: htn_program_impact_by_loc_year.csv\n")
@@ -239,7 +288,10 @@ dt_htn_control_rates <- dt_htn_control_rates[!is.na(start_year),]
 
 # Count number of non NA observations in control rates by location and the filter locations with at least 1 non NA observation
 dt_htn_control_rates[, non_na_control_rates := sum(!is.na(control_rate) | !is.na(control_rate_imputed)), by = location]
-dt_htn_control_rates <- dt_htn_control_rates[non_na_control_rates > 0,]
+#dt_htn_control_rates <- dt_htn_control_rates[non_na_control_rates > 0 ,]
+
+# Altered to not missed countries
+dt_htn_control_rates <- dt_htn_control_rates[non_na_control_rates > 0 | start_year==2026,]
 
 dt_htn_control_rates[, non_na_control_rates := NULL]
 # Keep most recent observed data (2025)

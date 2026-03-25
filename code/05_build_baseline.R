@@ -67,6 +67,27 @@ b_rates[,Nx2 := NULL]
 
 locs <- unique(b_rates$location)
 
+# Here we save a country wide population projection ages 20-95+ to plug in
+# in the model outputs to multiply by laves save per one million
+dt_pop_output <- b_rates[, .(population = sum(Nx)), by = .(location, year, sex, age)]
+
+dt_pop_output[, age_cat := fcase(
+  age >= 20 & age <= 29, "<=30",
+  age >= 30 & age <= 40, "31-40",
+  age >= 41 & age <= 50, "41-50",
+  age >= 51 & age <= 60, "51-60",
+  age >= 61 & age <= 70, "61-70",
+  age >= 71 & age <= 80, "71-80",
+  age >= 81 & age <= 90, "81-90",
+  age >= 91, ">=91"
+)]
+
+# save for reporting estimates in the report
+saveRDS(dt_pop_output, file = paste0(wd_data,"dt_pop_estimates_output_report.rds"))
+
+# remove
+rm(dt_pop_output)
+
 #...........................................................
 # Population data from UNWPP
 pop20 <- read.csv(paste0(wd_data,"PopulationsAge20_2050.csv"), stringsAsFactors = F)

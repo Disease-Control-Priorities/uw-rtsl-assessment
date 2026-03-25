@@ -1469,17 +1469,19 @@ dt_excel_per1m <- merge(dt_excel_per1m, dt_cf_ref_ly,
                         by = c("location", "year"), all.x = TRUE)
 
 # Add population denominators
-if (!is.null(dt_total_pop))
+if (!is.null(dt_total_pop)) {
   dt_excel_per1m <- merge(dt_excel_per1m, dt_total_pop,
                           by = c("location", "year"), all.x = TRUE)
-else
+} else {
   dt_excel_per1m[, total_population := NA_real_]
+}
 
-if (!is.null(dt_program_pop))
+if (!is.null(dt_program_pop)) {
   dt_excel_per1m <- merge(dt_excel_per1m, dt_program_pop,
                           by = c("location", "year"), all.x = TRUE)
-else
+} else {
   dt_excel_per1m[, program_population := NA_real_]
+}
 
 # For TFA and Counterfactual: program_population = total_population
 dt_excel_per1m[
@@ -1491,8 +1493,8 @@ dt_excel_per1m[
 setnames(dt_excel_per1m, "total_population", "population")
 
 # Compute per-1M columns (model output is already per 1M; values are direct)
-dt_excel_per1m[, deaths_per_1M          := round(deaths, 1)]
-dt_excel_per1m[, deaths_averted_per_1M  := round(deaths_averted, 1)]
+dt_excel_per1m[, deaths_per_1M         := round(deaths, 1)]
+dt_excel_per1m[, deaths_averted_per_1M := round(deaths_averted, 1)]
 dt_excel_per1m[scenario == "Counterfactual", deaths_averted_per_1M := 0]
 
 # Absolute deaths averted (rescaled)
