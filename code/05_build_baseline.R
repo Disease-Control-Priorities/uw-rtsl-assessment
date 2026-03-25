@@ -415,6 +415,22 @@ dt_htn_enrollment[, pop_program := Nx_program]
 # dt_htn_enrollment[, enrollment_check := sum(pop_program), by = .(location,year)]
 # dt_htn_enrollment[, enrollment_diff := enrolled-enrollment_check]
 
+
+# ── Normalise program population to 1 million reference cohort ──────────────
+# Scale Nx_program and pop_program so that the total enrolled population
+# sums to exactly 1,000,000 per location-year. This makes all downstream
+# model outputs (dead, sick, well) interpretable as counts per 1M treated,
+# which is the RTSL "Behind the Numbers" reporting unit.
+# The age/sex distribution is preserved; only the scale changes.
+
+dt_htn_enrollment[,
+                  norm_factor := 1e6 / sum(Nx_program, na.rm = TRUE),
+                  by = .(location, year)
+]
+dt_htn_enrollment[, Nx_program  := Nx_program  * norm_factor]
+dt_htn_enrollment[, pop_program := pop_program * norm_factor]
+dt_htn_enrollment[, norm_factor := NULL]
+
 # Keep only relevant variables and merge back to b_rates
 dt_htn_enrollment <- dt_htn_enrollment[, .(location, year, age, sex, Nx_program,pop_program)]
 
