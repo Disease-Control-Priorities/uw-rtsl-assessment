@@ -46,21 +46,28 @@ if (file.exists(paste0(slides_dir, "sl_scalars.rds"))) {
   sl <- list(n_countries = "N", study_years = "20XX--20XX")
 }
 
-n_countries <- if (!is.null(sl$n_countries)) sl$n_countries else "N"
-study_years <- if (!is.null(sl$study_years)) sl$study_years else "20XX--20XX"
+n_countries           <- if (!is.null(sl$n_countries))      sl$n_countries      else "N"
+study_years           <- if (!is.null(sl$study_years))      sl$study_years      else "20XX--20XX"
+total_bp              <- if (!is.null(sl$total_bp))         sl$total_bp         else NA
+total_tfa             <- if (!is.null(sl$total_tfa))        sl$total_tfa        else NA
+total_combined        <- if (!is.null(sl$total_combined))   sl$total_combined   else NA
+lives_per_1M_htn      <- if (!is.null(sl$lives_per_1M_htn))      sl$lives_per_1M_htn      else NA
+lives_per_1M_tfa      <- if (!is.null(sl$lives_per_1M_tfa))      sl$lives_per_1M_tfa      else NA
+lives_per_1M_combined <- if (!is.null(sl$lives_per_1M_combined)) sl$lives_per_1M_combined else NA
 
-if (file.exists(paste0(slides_dir, "sl_tab_summary.rds"))) {
-  sl_tab_summary <- readRDS(paste0(slides_dir, "sl_tab_summary.rds"))
+# ---- SL-02 to SL-08: Data tables -------------------------------------------
+load_sl <- function(name) {
+  f <- paste0(slides_dir, name)
+  if (file.exists(f)) readRDS(f) else NULL
 }
-if (file.exists(paste0(slides_dir, "sl_tab_region.rds"))) {
-  sl_tab_region <- readRDS(paste0(slides_dir, "sl_tab_region.rds"))
-}
-if (file.exists(paste0(slides_dir, "sl_dt_cause.rds"))) {
-  sl_dt_cause <- readRDS(paste0(slides_dir, "sl_dt_cause.rds"))
-}
-if (file.exists(paste0(slides_dir, "sl_dt_annual.rds"))) {
-  sl_dt_annual <- readRDS(paste0(slides_dir, "sl_dt_annual.rds"))
-}
+
+sl_tab_summary  <- load_sl("sl_tab_summary.rds")
+sl_tab_region   <- load_sl("sl_tab_region.rds")
+sl_tab_top15    <- load_sl("sl_tab_top15.rds")
+sl_dt_cause     <- load_sl("sl_dt_cause.rds")
+sl_dt_annual    <- load_sl("sl_dt_annual.rds")
+sl_bangladesh   <- load_sl("sl_bangladesh.rds")
+sl_tab_scenario <- load_sl("sl_tab_scenario.rds")
 
 # ---- PNG paths for pre-rendered figures -------------------------------------
 png_htn_program   <- paste0(wd_outp, "assessment_policy_htn_program.png")
@@ -476,40 +483,38 @@ Bangladesh demonstrates how a large-population LMIC can achieve measurable CVD m
 ## Bangladesh: Key Results
 
 ```{r bangladesh-results}
-# PLACEHOLDER: Load Bangladesh-specific model outputs from
-# output/out_model/model_output_Bangladesh_program_impact.rds
-# and present:
-#   - Cumulative deaths averted (HTN, TFA, combined)
-#   - Annual trajectory of deaths averted
-#   - Breakdown by cause (IHD, stroke, HHD)
-#   - Comparison of program vs counterfactual control rates
-
-if (file.exists(paste0(wd_outp, "out_model/model_output_Bangladesh_program_impact.rds"))) {
-  dt_bgd <- setDT(readRDS(paste0(wd_outp,
-    "out_model/model_output_Bangladesh_program_impact.rds")))
-
-  # Program-attributable deaths (program vs bau_upper)
-  dt_bgd_pgm <- dt_bgd[rate_scenario == "program" & year >= 2017,
-                         .(pgm_deaths = sum(dead, na.rm = TRUE)),
-                         by = .(scenario, year)]
-  dt_bgd_cf  <- dt_bgd[rate_scenario == "bau_upper" &
-                         scenario == "baseline" & year >= 2017,
-                         .(cf_deaths = sum(dead, na.rm = TRUE)),
-                         by = year]
-
-  dt_bgd_merge <- merge(dt_bgd_pgm, dt_bgd_cf, by = "year")
-  dt_bgd_merge[, averted := cf_deaths - pgm_deaths]
-
-  dt_bgd_sum <- dt_bgd_merge[, .(total_averted = sum(averted)), by = scenario]
-
-  kable(dt_bgd_sum,
+# Pre-computed by report.Rmd -> output/slides/sl_bangladesh.rds
+if (!is.null(sl_bangladesh)) {
+  # Summary table
+  kable(sl_bangladesh$summary,
         col.names = c("Scenario", "Deaths Averted (2017--2050)"),
         format = "latex", booktabs = TRUE,
         caption = "Bangladesh: program-attributable deaths averted") |>
     kable_styling(latex_options = c("hold_position"), font_size = 9)
 } else {
   cat("\\textit{PLACEHOLDER: Bangladesh results not yet available.
-      Run 06\\_run\\_scenarios\\_assessment.R to generate.}")
+      Knit report.Rmd to generate sl\\_bangladesh.rds.}")
+}
+```
+
+## Bangladesh: Deaths Averted by Cause
+
+```{r bangladesh-cause}
+if (!is.null(sl_bangladesh) && !is.null(sl_bangladesh$cause)) {
+  cause_map_bgd <- c(ihd = "IHD", istroke = "Ischemic stroke",
+                      hstroke = "Hemorrhagic stroke", hhd = "Hypertensive HD")
+  dt_bgd_cause <- copy(sl_bangladesh$cause)
+  dt_bgd_cause[, cause_lbl := cause_map_bgd[cause]]
+  dt_bgd_cause[is.na(cause_lbl), cause_lbl := cause]
+
+  kable(dt_bgd_cause[, .(Scenario = scenario, Cause = cause_lbl,
+                          `Deaths Averted` = averted)],
+        format = "latex", booktabs = TRUE,
+        caption = "Bangladesh: deaths averted by scenario and cause") |>
+    kable_styling(latex_options = c("hold_position", "scale_down"),
+                  font_size = 8)
+} else {
+  cat("\\textit{PLACEHOLDER: Bangladesh cause-level results not yet available.}")
 }
 ```
 
@@ -530,7 +535,7 @@ if (file.exists(paste0(wd_outp, "out_model/model_output_Bangladesh_program_impac
 \end{enumerate}
 
 \begin{exampleblock}{Bottom Line}
-RTSL cardiovascular health programs are projected to avert substantial CVD mortality across partner countries, with hypertension control as the primary driver and TFA elimination providing complementary gains.
+RTSL programs are projected to avert `r if (!is.na(total_combined)) fmt_M(total_combined) else "X"` million CVD deaths (`r study_years`) across `r n_countries` countries, with hypertension control as the primary driver and TFA elimination providing complementary gains.
 \end{exampleblock}
 
 <!-- ======================================================================
