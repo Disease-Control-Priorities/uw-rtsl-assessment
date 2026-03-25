@@ -547,33 +547,35 @@ ggsave(paste0(wd_outp, "assessment_asmr_cause.png"), plot = g,
 
 ```{r compute-deaths-averted, message=FALSE, warning=FALSE, echo=FALSE}
 # ---- Core: program-attributable deaths averted --------------------------------
-# For each intervention x country x age x sex x cause x year:
-#   deaths_averted = deaths(bau_upper) - deaths(program)
+# deaths_averted = deaths(Counterfactual, bau_upper) - deaths(intervention, program)
+#
+# The counterfactual is ALWAYS "Counterfactual" in rate_scenario == "bau_upper".
+# Merging on intervention was wrong for TFA: bau_upper has no "TFA Elimination" rows.
 
-merge_keys <- c("age_group", "sex", "year", "location", "cause", "age", "intervention")
+grp_keys <- c("age_group", "sex", "year", "location", "cause", "age")
 
-dt_bau_agg <- data_bau[year >= 2017,
-                        .(bau_deaths = sum(dead, na.rm = TRUE)),
-                        by = merge_keys]
+# Counterfactual deaths: Counterfactual intervention, bau_upper rate scenario
+dt_cf <- data_bau[intervention == "Counterfactual" & year >= 2017,
+                  .(cf_deaths = sum(dead, na.rm = TRUE)),
+                  by = grp_keys]
 
-dt_pgm_agg <- data_program[year >= 2017,
+# Program deaths: all non-Counterfactual interventions, program rate scenario
+dt_pgm_agg <- data_program[intervention %in% int_order & year >= 2017,
                             .(pgm_deaths = sum(dead, na.rm = TRUE)),
-                            by = merge_keys]
+                            by = c(grp_keys, "intervention")]
 
-dt_merged <- merge(dt_pgm_agg, dt_bau_agg,
-                   by = merge_keys, all = TRUE)
-dt_merged[is.na(bau_deaths), bau_deaths := 0]
+# Merge: each intervention row gets the single counterfactual baseline
+dt_merged <- merge(dt_pgm_agg, dt_cf, by = grp_keys, all.x = TRUE)
+dt_merged[is.na(cf_deaths),  cf_deaths  := 0]
 dt_merged[is.na(pgm_deaths), pgm_deaths := 0]
-dt_merged[, deaths_averted := bau_deaths - pgm_deaths]
+dt_merged[, deaths_averted := cf_deaths - pgm_deaths]
 
 # ---- Cumulative totals per intervention --------------------------------------
-dt_cumul <- dt_merged[intervention %in% int_order,
-                       .(deaths_averted = sum(deaths_averted, na.rm = TRUE)),
+dt_cumul <- dt_merged[, .(deaths_averted = sum(deaths_averted, na.rm = TRUE)),
                        by = intervention]
 
 # ---- Annual time-series ------------------------------------------------------
-dt_annual <- dt_merged[intervention %in% int_order,
-                        .(deaths_averted = sum(deaths_averted, na.rm = TRUE)),
+dt_annual <- dt_merged[, .(deaths_averted = sum(deaths_averted, na.rm = TRUE)),
                         by = .(intervention, year)]
 dt_annual[, intervention := factor(intervention, levels = int_order)]
 setorder(dt_annual, intervention, year)
@@ -582,9 +584,9 @@ dt_annual[, cum_deaths_averted := cumsum(deaths_averted), by = intervention]
 # ---- Per-scenario totals for inline text ------------------------------------
 total_combined <- dt_cumul[intervention == "HTN Control + TFA Elimination", deaths_averted]
 total_bp       <- dt_cumul[intervention == "HTN Control (Program)",         deaths_averted]
-total_tfa      <- dt_cumul[intervention == "TFA Elimination",              deaths_averted]
+total_tfa      <- dt_cumul[intervention == "TFA Elimination",               deaths_averted]
 
-n_years <- uniqueN(dt_merged[year >= 2017, year])
+n_years <- uniqueN(dt_merged$year)
 ```
 
 Between 2017 and 2050, the combined RTSL hypertension control and trans-fat elimination
