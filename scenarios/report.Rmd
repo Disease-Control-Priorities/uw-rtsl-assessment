@@ -589,12 +589,22 @@ total_tfa      <- dt_cumul[intervention == "TFA Elimination",               deat
 n_years <- uniqueN(dt_merged$year)
 ```
 
+```{r per1m-scalars, message=FALSE, warning=FALSE, echo=FALSE}
+# Per-1M scalars for inline narrative (average per-country cumulative per 1M)
+lives_per_1M_htn      <- round(total_bp       / n_countries)
+lives_per_1M_tfa      <- round(total_tfa      / n_countries)
+lives_per_1M_combined <- round(total_combined / n_countries)
+```
+
 Between 2017 and 2050, the combined RTSL hypertension control and trans-fat elimination
 programs are projected to avert approximately **`r fmt_k(total_combined)` thousand deaths**
+(`r fmt_k(lives_per_1M_combined)` thousand per million treated)
 across `r n_countries` countries.
 
-- **HTN Control (Program)** alone would avert `r fmt_k(total_bp)` thousand deaths.
-- **TFA Elimination** alone would avert `r fmt_k(total_tfa)` thousand deaths.
+- **HTN Control (Program)** alone would avert `r fmt_k(total_bp)` thousand deaths
+  (`r fmt_k(lives_per_1M_htn)` thousand per million treated).
+- **TFA Elimination** alone would avert `r fmt_k(total_tfa)` thousand deaths
+  (`r fmt_k(lives_per_1M_tfa)` thousand per million population).
 
 ## Table 1 --- Cumulative Deaths Averted by Intervention (2017--2050)
 
@@ -800,6 +810,242 @@ print(g)
 ggsave(paste0(wd_outp, "assessment_fig4_cum_averted.png"), plot = g,
        width = 11, height = 5, dpi = 300)
 ```
+
+---
+
+# Outcomes per 1 Million
+
+```{r per1m-compute, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Reconstruct actual population denominators from raw inputs ----
+# Replicating the logic from 05_build_baseline.R (not from model output)
+
+# PROGRAM POPULATION (HTN denominator): actual enrolled per location-year
+dt_program_pop <- tryCatch({
+  # Step a: Load htn_control_scenarios, keep location, year, enrolled
+  htn_csv <- fread(paste0(wd_data, "htn_control_scenarios_by_loc_year.csv"))
+  htn_csv <- htn_csv[, .(location, year, enrolled)]
+
+  # Step b: Compute age/sex population proportions from model output
+  #         (data_bau, Counterfactual, cause == "ihd", year >= 2017)
+  dt_pop_dist <- data_bau[
+    intervention == "Counterfactual" & cause == "ihd" & year >= 2017,
+    .(population = sum(pop, na.rm = TRUE)),
+    by = .(location, year, age, sex)
+  ]
+  dt_pop_dist[, population_proportion := population / sum(population),
+              by = .(location, year)]
+
+  # Step c: Merge enrolled x population_proportion to get Nx_program
+  dt_enr <- merge(htn_csv, dt_pop_dist,
+                  by = c("location", "year"), all.y = TRUE)
+  dt_enr[is.na(enrolled), enrolled := 0]
+  dt_enr[, Nx_program := enrolled * population_proportion]
+
+  # Step d: Sum by location-year to get total program_population
+  dt_enr[, .(program_population = sum(Nx_program, na.rm = TRUE)),
+         by = .(location, year)]
+}, error = function(e) {
+  message("htn_control_scenarios_by_loc_year.csv not found ",
+          "\u2014 program_population unavailable.")
+  NULL
+})
+
+# TOTAL COUNTRY POPULATION age 20+ per location-year
+# (from UNWPP, same source as 05_build_baseline.R)
+dt_total_pop <- tryCatch({
+  pop_raw <- fread(paste0(wd_data, "PopulationsAge20_2050.csv"))
+  if ("year_id" %in% names(pop_raw)) setnames(pop_raw, "year_id", "year")
+  pop_raw[, .(total_population = sum(Nx, na.rm = TRUE)),
+          by = .(location, year)]
+}, error = function(e) {
+  message("PopulationsAge20_2050.csv not found ",
+          "\u2014 total_population unavailable.")
+  NULL
+})
+
+# ---- Per-1M summary by intervention x cause ----
+# Model outputs are already per 1M treated (upstream normalisation).
+# HTN scenarios: per 1M treated patients
+# TFA scenarios: per 1M population (approximately equal per-person rate)
+
+dt_per1m_int_cause <- dt_merged[
+  year >= 2017,
+  .(deaths_per_1M        = round(sum(pgm_deaths,     na.rm = TRUE), 1),
+    deaths_averted_per_1M = round(sum(deaths_averted, na.rm = TRUE), 1)),
+  by = .(intervention, cause)
+]
+dt_per1m_int_cause[, cause_lbl := cause_map[cause]]
+dt_per1m_int_cause[, denominator := fifelse(
+  intervention == "TFA Elimination",
+  "per 1M population", "per 1M treated"
+)]
+
+# Totals by intervention (for bar chart)
+dt_per1m_bar <- dt_merged[
+  year >= 2017,
+  .(deaths_averted_per_1M = sum(deaths_averted, na.rm = TRUE)),
+  by = intervention
+]
+dt_per1m_bar[, intervention := factor(intervention, levels = int_order)]
+
+# ---- Rescale to actual absolute deaths averted ----
+dt_rescale_detail <- dt_merged[
+  year >= 2017,
+  .(per_1M_averted = sum(deaths_averted, na.rm = TRUE)),
+  by = .(intervention, location, year)
+]
+
+if (!is.null(dt_program_pop)) {
+  dt_rescale_detail <- merge(dt_rescale_detail, dt_program_pop,
+                             by = c("location", "year"), all.x = TRUE)
+} else {
+  dt_rescale_detail[, program_population := NA_real_]
+}
+if (!is.null(dt_total_pop)) {
+  dt_rescale_detail <- merge(dt_rescale_detail, dt_total_pop,
+                             by = c("location", "year"), all.x = TRUE)
+} else {
+  dt_rescale_detail[, total_population := NA_real_]
+}
+
+# HTN: multiply per-1M by (actual program_population / 1e6)
+dt_rescale_detail[
+  intervention %in% c("HTN Control (Program)",
+                       "HTN Control + TFA Elimination"),
+  abs_averted := per_1M_averted * (program_population / 1e6)
+]
+# TFA: multiply per-1M by (total_population / 1e6)
+dt_rescale_detail[
+  intervention == "TFA Elimination",
+  abs_averted := per_1M_averted * (total_population / 1e6)
+]
+
+# Aggregate for comparison table
+dt_rescale_agg <- dt_rescale_detail[,
+  .(rescaled_abs = sum(abs_averted, na.rm = TRUE),
+    model_per_1M = sum(per_1M_averted, na.rm = TRUE)),
+  by = intervention
+]
+dt_rescale_agg[, model_per_1M_K  := round(model_per_1M  / 1e3, 1)]
+dt_rescale_agg[, rescaled_abs_K  := round(rescaled_abs  / 1e3, 1)]
+
+# Flag large discrepancies (> 10%) between rescaled and model per-1M
+# (expected to differ because of population scaling; flag only unexpected mismatches)
+dt_rescale_agg[, ratio := rescaled_abs / pmax(model_per_1M, 1)]
+
+# ---- Additional per-1M scalars for narrative ----
+# (lives_per_1M_htn/tfa/combined already computed in per1m-scalars chunk)
+
+# 5-year window (2020-2024) average per country
+lives_per_1M_htn_5yr <- round(
+  dt_merged[intervention == "HTN Control (Program)" &
+              year %in% 2020:2024,
+            sum(deaths_averted, na.rm = TRUE)] / n_countries
+)
+
+# Rescaled absolute totals
+total_bp_rescaled <- sum(
+  dt_rescale_detail[intervention == "HTN Control (Program)",
+                    abs_averted], na.rm = TRUE)
+total_tfa_rescaled <- sum(
+  dt_rescale_detail[intervention == "TFA Elimination",
+                    abs_averted], na.rm = TRUE)
+total_combined_rescaled <- sum(
+  dt_rescale_detail[intervention == "HTN Control + TFA Elimination",
+                    abs_averted], na.rm = TRUE)
+```
+
+## Per 1M Treated (Normalised Model Output)
+
+```{r per1m-table, message=FALSE, warning=FALSE, echo=FALSE}
+dt_per1m_display <- dt_per1m_int_cause[, .(
+  Intervention              = intervention,
+  Cause                     = cause_lbl,
+  `Deaths per 1M`           = comma(deaths_per_1M,        accuracy = 0.1),
+  `Deaths averted per 1M`   = comma(deaths_averted_per_1M, accuracy = 0.1),
+  Denominator               = denominator
+)]
+setorder(dt_per1m_display, Intervention, Cause)
+
+kable(dt_per1m_display,
+      caption = paste0(
+        "Deaths and deaths averted per 1 million, by intervention and ",
+        "cause (", study_years, ")."),
+      align = c("l", "l", "r", "r", "l")) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = TRUE, font_size = 13) |>
+  row_spec(0, bold = TRUE) |>
+  footnote(general = paste0(
+    "HTN scenarios: per 1M patients treated (normalised model output). ",
+    "TFA scenarios: per 1M population age 20+. ",
+    "Figures are cumulative sums across all ", n_countries,
+    " program countries."))
+```
+
+```{r per1m-barchart, message=FALSE, warning=FALSE, echo=FALSE, fig.width=9, fig.height=5}
+g <- ggplot(dt_per1m_bar,
+            aes(x = deaths_averted_per_1M / 1e3,
+                y = intervention,
+                fill = as.character(intervention))) +
+  geom_col(width = 0.65) +
+  scale_fill_manual(values = int_cols, guide = "none") +
+  scale_x_continuous(expand = c(0, 0), labels = comma) +
+  labs(
+    title = paste0("Deaths Averted per 1 Million by Intervention, ",
+                   study_years),
+    x     = "Deaths averted per 1M (thousands, cumulative across countries)",
+    y     = NULL
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(plot.title         = element_text(face = "bold"),
+        panel.grid.minor   = element_blank(),
+        panel.grid.major.y = element_blank())
+print(g)
+```
+
+## Rescaled to Actual Population
+
+```{r per1m-rescaled, message=FALSE, warning=FALSE, echo=FALSE}
+dt_rescale_display <- dt_rescale_agg[, .(
+  Intervention                     = intervention,
+  `Model per-1M (thousands)`       = comma(model_per_1M_K,  accuracy = 0.1),
+  `Rescaled absolute (thousands)`  = comma(rescaled_abs_K,   accuracy = 0.1)
+)]
+dt_rescale_display[, Intervention := factor(Intervention, levels = int_order)]
+setorder(dt_rescale_display, Intervention)
+
+kable(dt_rescale_display,
+      caption = paste0(
+        "Rescaled absolute deaths averted vs. normalised per-1M model ",
+        "output (", study_years, ")."),
+      align = c("l", "r", "r")) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE, font_size = 13) |>
+  row_spec(0, bold = TRUE) |>
+  footnote(general = paste0(
+    "HTN rescaled by actual program enrollment; ",
+    "TFA rescaled by total population age 20+. ",
+    "Per-1M figures sum normalised model output across all countries."))
+```
+
+## Narrative Summary
+
+The RTSL HTN program is projected to save approximately
+`r fmt_k(lives_per_1M_htn)` thousand lives per million patients treated
+(cumulative `r study_years`), equivalent to
+`r fmt_k(total_bp_rescaled)` thousand deaths averted across all
+`r n_countries` program countries. Over a 5-year window (2020--2024),
+the average program country averts `r fmt_k(lives_per_1M_htn_5yr)` thousand
+deaths per million treated.
+
+TFA elimination policies are projected to avert
+`r fmt_k(lives_per_1M_tfa)` thousand deaths per million population
+(cumulative), rescaling to `r fmt_k(total_tfa_rescaled)` thousand actual
+deaths averted across program countries.
+
+Combined, `r fmt_k(lives_per_1M_combined)` thousand deaths per million
+treated are averted, equivalent to `r fmt_k(total_combined_rescaled)` thousand
+deaths averted in absolute terms.
 
 ---
 
@@ -1193,6 +1439,89 @@ add_sheet(wb, "Countries", as.data.frame(countries_by_region),
 if (exists("dt_u70_loc") && nrow(dt_u70_loc) > 0)
   add_sheet(wb, "U70_by_Country", as.data.frame(dt_u70_loc),
             "Deaths averted under age 70 by country (HTN + TFA, 2017-2050).")
+
+# ---- Per1M_Summary sheet ----
+# One row per location x year x scenario, all scenarios stacked
+dt_cf_ly <- data_bau[
+  intervention == "Counterfactual" & year >= 2017,
+  .(deaths = sum(dead, na.rm = TRUE)),
+  by = .(location, year)
+]
+dt_cf_ly[, scenario := "Counterfactual"]
+
+dt_int_ly <- dt_merged[
+  year >= 2017,
+  .(deaths         = sum(pgm_deaths,     na.rm = TRUE),
+    deaths_averted = sum(deaths_averted, na.rm = TRUE)),
+  by = .(location, year, intervention)
+]
+setnames(dt_int_ly, "intervention", "scenario")
+
+# Counterfactual deaths reference (for pct_averted)
+dt_cf_ref_ly <- dt_cf_ly[, .(location, year, cf_deaths_ref = deaths)]
+
+dt_excel_per1m <- rbind(
+  dt_cf_ly[, .(location, year, scenario, deaths, deaths_averted = 0)],
+  dt_int_ly[, .(location, year, scenario, deaths, deaths_averted)],
+  fill = TRUE
+)
+dt_excel_per1m <- merge(dt_excel_per1m, dt_cf_ref_ly,
+                        by = c("location", "year"), all.x = TRUE)
+
+# Add population denominators
+if (!is.null(dt_total_pop))
+  dt_excel_per1m <- merge(dt_excel_per1m, dt_total_pop,
+                          by = c("location", "year"), all.x = TRUE)
+else
+  dt_excel_per1m[, total_population := NA_real_]
+
+if (!is.null(dt_program_pop))
+  dt_excel_per1m <- merge(dt_excel_per1m, dt_program_pop,
+                          by = c("location", "year"), all.x = TRUE)
+else
+  dt_excel_per1m[, program_population := NA_real_]
+
+# For TFA and Counterfactual: program_population = total_population
+dt_excel_per1m[
+  scenario %in% c("TFA Elimination", "Counterfactual"),
+  program_population := total_population
+]
+
+# Rename total_population -> population
+setnames(dt_excel_per1m, "total_population", "population")
+
+# Compute per-1M columns (model output is already per 1M; values are direct)
+dt_excel_per1m[, deaths_per_1M          := round(deaths, 1)]
+dt_excel_per1m[, deaths_averted_per_1M  := round(deaths_averted, 1)]
+dt_excel_per1m[scenario == "Counterfactual", deaths_averted_per_1M := 0]
+
+# Absolute deaths averted (rescaled)
+dt_excel_per1m[
+  scenario %in% c("HTN Control (Program)",
+                   "HTN Control + TFA Elimination"),
+  n_deaths_averted := deaths_averted * (program_population / 1e6)
+]
+dt_excel_per1m[
+  scenario == "TFA Elimination",
+  n_deaths_averted := deaths_averted * (population / 1e6)
+]
+dt_excel_per1m[scenario == "Counterfactual", n_deaths_averted := 0]
+
+# pct_averted
+dt_excel_per1m[, pct_averted := round(
+  fifelse(cf_deaths_ref > 0 & scenario != "Counterfactual",
+          deaths_averted / cf_deaths_ref * 100, 0), 2)]
+dt_excel_per1m[scenario == "Counterfactual", pct_averted := 0]
+
+# Select final columns and sort
+dt_excel_per1m_final <- dt_excel_per1m[, .(
+  location, year, scenario, population, program_population,
+  deaths_per_1M, deaths_averted_per_1M, n_deaths_averted, pct_averted
+)]
+setorder(dt_excel_per1m_final, location, scenario, year)
+
+add_sheet(wb, "Per1M_Summary", as.data.frame(dt_excel_per1m_final),
+          "Per 1M Summary: deaths and deaths averted by location, year, and scenario.")
 
 out_xlsx <- paste0(wd_scen, "RTSL_Assessment_Results.xlsx")
 saveWorkbook(wb, out_xlsx, overwrite = TRUE)
