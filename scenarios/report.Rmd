@@ -1547,10 +1547,16 @@ bau_total_deaths <- data_bau[intervention == "HTN Control + TFA Elimination" &
 sl_scalars <- list(
   n_countries      = n_countries,
   study_years      = study_years,
+  year_min         = year_min,
+  year_max         = year_max,
+  n_years          = n_years,
   total_combined   = total_combined,
   total_bp         = total_bp,
   total_tfa        = total_tfa,
-  bau_total_deaths = bau_total_deaths
+  bau_total_deaths = bau_total_deaths,
+  lives_per_1M_htn      = lives_per_1M_htn,
+  lives_per_1M_tfa      = lives_per_1M_tfa,
+  lives_per_1M_combined = lives_per_1M_combined
 )
 saveRDS(sl_scalars, paste0(slides_dir, "sl_scalars.rds"))
 message("SL-01 saved: sl_scalars.rds")
@@ -1672,21 +1678,97 @@ ggsave(paste0(slides_dir, "sl_fig_cum_averted.png"), plot = g,
 message("SL-09 saved: sl_fig_cum_averted.png")
 ```
 
+```{r slides-bangladesh, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Bangladesh country case artefact for presentation ---------------------
+bgd_rds <- paste0(wd_outp, "out_model/model_output_Bangladesh_program_impact.rds")
+if (file.exists(bgd_rds)) {
+  dt_bgd <- setDT(readRDS(bgd_rds))
+
+  # Program-attributable deaths by scenario
+  dt_bgd_pgm <- dt_bgd[rate_scenario == "program" & year >= 2017,
+                         .(pgm_deaths = sum(dead, na.rm = TRUE)),
+                         by = .(scenario, year)]
+  dt_bgd_cf  <- dt_bgd[rate_scenario == "bau_upper" &
+                         scenario == "baseline" & year >= 2017,
+                         .(cf_deaths = sum(dead, na.rm = TRUE)),
+                         by = year]
+
+  dt_bgd_merge <- merge(dt_bgd_pgm, dt_bgd_cf, by = "year")
+  dt_bgd_merge[, averted := cf_deaths - pgm_deaths]
+
+  # Summary table: total averted by scenario
+  sl_bgd_summary <- dt_bgd_merge[, .(total_averted = sum(averted)), by = scenario]
+
+  # Annual time-series for Bangladesh
+  sl_bgd_annual <- dt_bgd_merge[, .(year, scenario, averted)]
+  sl_bgd_annual[, cum_averted := cumsum(averted), by = scenario]
+
+  # By cause
+  dt_bgd_cause_pgm <- dt_bgd[rate_scenario == "program" & year >= 2017,
+                               .(pgm_deaths = sum(dead, na.rm = TRUE)),
+                               by = .(scenario, cause)]
+  dt_bgd_cause_cf  <- dt_bgd[rate_scenario == "bau_upper" &
+                               scenario == "baseline" & year >= 2017,
+                               .(cf_deaths = sum(dead, na.rm = TRUE)),
+                               by = cause]
+  sl_bgd_cause <- merge(dt_bgd_cause_pgm, dt_bgd_cause_cf, by = "cause")
+  sl_bgd_cause[, averted := cf_deaths - pgm_deaths]
+
+  sl_bangladesh <- list(
+    summary = sl_bgd_summary,
+    annual  = sl_bgd_annual,
+    cause   = sl_bgd_cause
+  )
+  saveRDS(sl_bangladesh, paste0(slides_dir, "sl_bangladesh.rds"))
+  message("SL-10 saved: sl_bangladesh.rds")
+} else {
+  message("Bangladesh model output not found — skipping sl_bangladesh.rds")
+}
+```
+
+```{r slides-tab-scenario, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Scenario comparison table for presentation ----------------------------
+sl_tab_scenario <- data.table(
+  Intervention = c("HTN Control (Program)", "TFA Elimination",
+                    "HTN Control + TFA Elimination"),
+  Mechanism = c(
+    "Antihypertensive therapy using observed RTSL program control rates",
+    "Elimination of industrial TFA via enacted best-practice policies",
+    "Both interventions combined (multiplicative effect ratios)"
+  ),
+  Key_Param = c(
+    "Observed control rates (2017-2024); maintained at 2024 level to 2050",
+    "Target: 0% energy from TFA; 2-year lag from policy passage to effect",
+    "epsilon_IR_total = epsilon_IR_BP x epsilon_IR_TFA"
+  ),
+  Deaths_averted_K = c(
+    round(total_bp / 1e3, 1),
+    round(total_tfa / 1e3, 1),
+    round(total_combined / 1e3, 1)
+  )
+)
+saveRDS(sl_tab_scenario, paste0(slides_dir, "sl_tab_scenario.rds"))
+message("SL-11 saved: sl_tab_scenario.rds")
+```
+
 ```{r slides-manifest, message=FALSE, warning=FALSE, echo=FALSE}
 sl_manifest <- data.table(
   file = c(
     "sl_scalars.rds", "sl_tab_summary.rds", "sl_tab_region.rds",
     "sl_tab_top15.rds", "sl_dt_cause.rds", "sl_dt_annual.rds",
     "sl_fig_deaths_averted.png", "sl_fig_top15_countries.png",
-    "sl_fig_cum_averted.png"
+    "sl_fig_cum_averted.png",
+    "sl_bangladesh.rds", "sl_tab_scenario.rds"
   ),
-  type = c(rep("rds", 6), rep("png", 3)),
+  type = c(rep("rds", 6), rep("png", 3), rep("rds", 2)),
   consumed_by = c(
     "inline scalars", "tab-summary kable", "tab-region kable",
     "fig-top-countries ggplot", "fig-by-cause ggplot", "fig-deaths-averted ggplot",
     "fig-deaths-averted include_graphics",
     "fig-top-countries include_graphics",
-    "fig-cum-averted include_graphics"
+    "fig-cum-averted include_graphics",
+    "bangladesh-results kable (presentation.Rmd)",
+    "scenario-table kable (presentation.Rmd)"
   )
 )
 saveRDS(sl_manifest, paste0(slides_dir, "sl_manifest.rds"))
