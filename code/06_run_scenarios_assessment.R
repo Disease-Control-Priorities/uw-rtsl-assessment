@@ -2290,7 +2290,7 @@ clusterExport(
     "dt_tfa_scenarios",
     "dt_statin_scenarios",
     "dt_af_statins",
-    "scenarios_htn",
+    "scenarios",
     "wd_outp",
     "control_start_year",
     "control_target_year",
@@ -2309,7 +2309,7 @@ clusterEvalQ(cl, {
 locs <- unique(data.in$location)
 locs <- locs[!locs %in% c("Greenland", "Bermuda")]  # Exclusions
 
-locs <- c("China", "India")
+# locs <- c("China", "India")
 
 # #...........................................................
 # ## Parallel execution: loop over countries × target scenarios ----
