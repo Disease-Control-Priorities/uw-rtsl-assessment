@@ -161,7 +161,7 @@ Scalable, evidence-based interventions --- hypertension control programs and TFA
 ## Central Research Question
 
 \begin{block}{Research Question}
-What is the projected health impact --- in terms of \textbf{CVD deaths averted} --- of RTSL cardiovascular health programs operating in `r n_countries` countries from 2017 to 2024, projected to 2050?
+What is the projected health impact --- in terms of \textbf{CVD deaths averted} --- of RTSL cardiovascular health programs operating in `r n_countries` countries from 2017 to 2025, projected to 2050?
 \end{block}
 
 \medskip
@@ -173,9 +173,9 @@ What is the projected health impact --- in terms of \textbf{CVD deaths averted} 
   \item How do impacts vary across \textbf{countries}, \textbf{age groups}, and \textbf{causes of death}?
 \end{enumerate}
 
-\begin{alertblock}{Open Question}
-Should the primary metric be deaths averted, DALYs, or life-years gained?
-\end{alertblock}
+<!-- \begin{alertblock}{Open Question} -->
+<!-- Should the primary metric be deaths averted, DALYs, or life-years gained? -->
+<!-- \end{alertblock} -->
 
 <!-- ======================================================================
      4. DATA SOURCES & KEY VARIABLES
@@ -243,7 +243,7 @@ if (!is.null(fig_htn_control_rates)) {
 }
 ```
 
-\note{The "program control rate" is the proportion of enrolled hypertensive patients whose blood pressure is controlled (typically <140/90 mmHg). Observed values (dots) come from the HTN Global Tracker (2017--2024). The projection assumption is conservative: each country's 2024 observed rate is held constant to 2050 (dashed lines), with no further improvement assumed.}
+\note{The "program control rate" is the proportion of enrolled hypertensive patients whose blood pressure is controlled (typically <140/90 mmHg). Observed values (dots) come from the HTN Global Tracker (2017--2025). The projection assumption is conservative: each country's 2025 observed rate is held constant to 2050 (dashed lines), with no further improvement assumed.}
 
 <!-- ======================================================================
      5. ESTIMAND, CAUSAL FRAMEWORK & COUNTERFACTUAL IMPUTATION
@@ -262,7 +262,7 @@ The \textbf{program-attributable deaths averted}: the difference in cumulative C
 \justifying
 
 - Each country is simulated **twice** per intervention scenario:
-  - **Program run**: observed RTSL control rates applied (2017--2024 data, maintained to 2050)
+  - **Program run**: observed RTSL control rates applied (2017--2025 data, maintained to 2050)
   - **Counterfactual run**: zero incremental program effect (business-as-usual)
 - The **program-attributable impact** = deaths(counterfactual) $-$ deaths(program)
 
@@ -293,7 +293,7 @@ dt_scen <- data.table(
     "Both interventions applied simultaneously (multiplicative combination)"
   ),
   Key_Param = c(
-    "Observed control rates (2017--2024); maintained at 2024 level to 2050",
+    "Observed control rates (2017--2025); maintained at 2025 level to 2050",
     "Target: 0\\% energy from TFA; 2-year lag from policy passage to effect",
     "$\\varepsilon_{IR,total} = \\varepsilon_{IR,BP} \\times \\varepsilon_{IR,TFA}$"
   )
@@ -322,7 +322,7 @@ kable(dt_scen, format = "latex", booktabs = TRUE, escape = FALSE,
 \medskip
 \textbf{HTN intervention}
 \begin{itemize}\footnotesize
-  \item Observed program enrollment \& control rates (2017--2024)
+  \item Observed program enrollment \& control rates (2017--2025)
   \item Program population normalised to 1M reference cohort per country-year
   \item Treatment effects from Ettehad meta-analysis, diabetes-weighted
 \end{itemize}
@@ -480,27 +480,27 @@ Totals are not shown. Hypertension and TFA interventions have different target p
      8d. EXISTING RESULT DETAIL SLIDES (retained)
      ====================================================================== -->
 
-## Deaths Averted by Intervention (All Scenarios)
+<!-- ## Deaths Averted by Intervention (All Scenarios) -->
 
-```{r fig-deaths-intervention, out.width="95%"}
-if (file.exists(png_deaths_int)) {
-  knitr::include_graphics(png_deaths_int)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Deaths averted by intervention\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
+<!-- ```{r fig-deaths-intervention, out.width="95%"} -->
+<!-- if (file.exists(png_deaths_int)) { -->
+<!--   knitr::include_graphics(png_deaths_int) -->
+<!-- } else { -->
+<!--   plot.new() -->
+<!--   text(0.5, 0.5, "PLACEHOLDER: Deaths averted by intervention\n(knit report.Rmd to generate)", cex = 1.2) -->
+<!-- } -->
+<!-- ``` -->
 
-## Deaths Averted by Cause
+<!-- ## Deaths Averted by Cause -->
 
-```{r fig-deaths-cause, out.width="95%"}
-if (file.exists(png_deaths_cause)) {
-  knitr::include_graphics(png_deaths_cause)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Deaths averted by cause\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
+<!-- ```{r fig-deaths-cause, out.width="95%"} -->
+<!-- if (file.exists(png_deaths_cause)) { -->
+<!--   knitr::include_graphics(png_deaths_cause) -->
+<!-- } else { -->
+<!--   plot.new() -->
+<!--   text(0.5, 0.5, "PLACEHOLDER: Deaths averted by cause\n(knit report.Rmd to generate)", cex = 1.2) -->
+<!-- } -->
+<!-- ``` -->
 
 ## Annual Deaths Averted Over Time
 
@@ -563,6 +563,37 @@ if (file.exists(png_map)) {
 \begin{exampleblock}{Why Bangladesh?}
 Bangladesh demonstrates how a large-population LMIC can achieve measurable CVD mortality reductions through systematic hypertension control at scale.
 \end{exampleblock}
+
+
+## Bangladesh: Program vs Overall Population
+
+```{r bangladesh-program-vs-population-short, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
+library(knitr)
+library(kableExtra)
+
+tab_compare <- data.frame(
+  `Age category` = c("≤30", "31–40", "41–50", "51–60", "61–70", "71–80", "81–90", "≥91"),
+  `Program %` = c("2.8", "15.4", "28.0", "29.0", "17.9", "5.6", "1.1", "0.2"),
+  `Bangladesh %` = c("~26", "~18", "~14", "~11", "~7", "~3", "~1", "~0.2"),
+  Interpretation = c("Underrep.", "Slightly underrep.", "Overrep.", "Strongly overrep.",
+                     "Overrep.", "Slightly overrep.", "Aligned", "Aligned"),
+  check.names = FALSE
+)
+
+kbl(tab_compare, booktabs = TRUE, align = "lccc") %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down"),
+    font_size = 8
+  )
+
+cat("
+\\vspace{0.3cm}
+
+{\\footnotesize
+\\textbf{Takeaway:} The enrolled population is older than the national population, so the hypertension model should use the program age distribution when estimating impact.
+}
+")
+```
 
 ## Bangladesh: Key Results
 
@@ -633,7 +664,7 @@ RTSL programs are projected to avert `r if (!is.na(total_combined)) fmt_M(total_
 - **Counterfactual assumption**: Business-as-usual assumes zero incremental program effect; actual counterfactual HTN control rates may not be zero
 - **Static BP distributions**: No secular trend in population BP distributions; no endogenous updating as program coverage rises
 - **Program population normalisation**: Results are scaled to a 1M reference cohort; extrapolation to full national populations requires additional assumptions
-- **Control rate maintenance**: 2024 observed rates are held constant to 2050; real-world sustainability is uncertain
+- **Control rate maintenance**: 2025 observed rates are held constant to 2050; real-world sustainability is uncertain
 
 \begin{uncertaintyblock}{Sensitivity Caveats}
 The model does not include formal uncertainty quantification (e.g., probabilistic sensitivity analysis). Key parameters --- control rates, effect sizes, TFA exposure levels --- are used at point estimates.
@@ -651,11 +682,12 @@ The model does not include formal uncertainty quantification (e.g., probabilisti
 ## Recommended Actions
 
 \begin{enumerate}
-  \item \textbf{Validate country-level inputs} with national program managers --- particularly 2024 control rates and enrollment data
-  \item \textbf{Add probabilistic sensitivity analysis} to quantify uncertainty around key parameters and provide confidence intervals
+  \item \textbf{Validate country-level inputs} with national program managers --- particularly 2025 control rates and enrollment data
   \item \textbf{Extend the TFA module} with updated exposure data and additional country coverage as new policies are enacted
   \item \textbf{Integrate statin therapy} for a comprehensive three-intervention assessment
 \end{enumerate}
+
+  <!-- \item \textbf{Add probabilistic sensitivity analysis} to quantify uncertainty around key parameters and provide confidence intervals -->
 
 \medskip
 
