@@ -80,6 +80,8 @@ fig_htn_per1m              <- load_sl("sl_fig_htn_per1m.rds")
 fig_tfa_per1m              <- load_sl("sl_fig_tfa_per1m.rds")
 fig_combined_per1m         <- load_sl("sl_fig_combined_per1m.rds")
 tbl_total_lives_saved      <- load_sl("sl_tbl_total_lives_saved.rds")
+tbl_grand_total_lives_saved <- load_sl("sl_tbl_grand_total_lives_saved.rds")
+fig_global_cumulative      <- load_sl("sl_fig_global_cumulative.rds")
 
 # ---- New slide artefacts (Bangladesh section) ----
 tbl_bangladesh_summary     <- load_sl("sl_tbl_bangladesh_summary.rds")
@@ -514,7 +516,64 @@ if (!is.null(fig_tfa_per1m)) {
 \footnotesize All values are deaths averted per 1 million population (2017--2050).
 
 <!-- ======================================================================
-     8c. RESULTS — COMBINED PER CAPITA
+     8c. RESULTS — ABSOLUTE TOTALS
+     ====================================================================== -->
+
+## Total Lives Saved by Country and Intervention
+
+```{r tbl-total-lives-saved, echo=FALSE, results="asis"}
+if (!is.null(tbl_total_lives_saved)) {
+  kable(tbl_total_lives_saved, format = "latex", booktabs = TRUE) |>
+    kable_styling(latex_options = c("striped", "hold_position", "scale_down"),
+                  font_size = 7, full_width = TRUE) |>
+    footnote(general = "HTN totals reflect program population; TFA totals reflect national population. Combined totals are not shown where populations differ.")
+} else {
+  cat("\\textit{PLACEHOLDER: Total lives saved table not yet available. Knit report.Rmd to generate.}")
+}
+```
+
+## Total Lives Saved Across All Countries, by Intervention
+
+```{r tbl-grand-total-lives-saved, echo=FALSE, results="asis"}
+if (!is.null(tbl_grand_total_lives_saved)) {
+  grand_combined_val <- attr(tbl_grand_total_lives_saved, "grand_combined")
+  grand_combined_fmt <- if (!is.null(grand_combined_val)) formatC(round(grand_combined_val), format = "d", big.mark = ",") else "N/A"
+
+  kable(tbl_grand_total_lives_saved, format = "latex", booktabs = TRUE) |>
+    kable_styling(latex_options = c("hold_position"), font_size = 9) |>
+    row_spec(3, bold = TRUE) |>
+    footnote(general = "Combined total sums across interventions with different target populations (program pop for HTN; national pop for TFA). Interpret with caution.")
+} else {
+  cat("\\textit{PLACEHOLDER: Grand total lives saved not yet available. Knit report.Rmd to generate.}")
+  grand_combined_fmt <- "N/A"
+}
+```
+
+\begin{exampleblock}{Grand Total}
+Across all RTSL-engaged countries, `r if (exists("grand_combined_fmt")) grand_combined_fmt else "N/A"` total deaths averted from 2024--2050 across both interventions.
+\end{exampleblock}
+
+## Cumulative Deaths Averted Over Time --- All Countries
+
+```{r fig-global-cumulative, echo=FALSE, fig.height=3.4}
+if (!is.null(fig_global_cumulative)) {
+  global_htn_fmt <- formatC(round(attr(fig_global_cumulative, "global_cum_htn")), format = "d", big.mark = ",")
+  global_tfa_fmt <- formatC(round(attr(fig_global_cumulative, "global_cum_tfa")), format = "d", big.mark = ",")
+  print(fig_global_cumulative)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Global cumulative chart\n(knit report.Rmd to generate)", cex = 1.2)
+  global_htn_fmt <- "N/A"
+  global_tfa_fmt <- "N/A"
+}
+```
+
+\begin{exampleblock}{By 2050}
+`r if (exists("global_htn_fmt")) global_htn_fmt else "N/A"` cumulative deaths averted from hypertension control and `r if (exists("global_tfa_fmt")) global_tfa_fmt else "N/A"` from TFA elimination.
+\end{exampleblock}
+
+<!-- ======================================================================
+     8d. RESULTS — COMBINED PER CAPITA
      ====================================================================== -->
 
 ## Combined Impact: Deaths Averted per 1 Million People
@@ -532,21 +591,8 @@ if (!is.null(fig_combined_per1m)) {
 Totals are not shown. Hypertension and TFA interventions have different target populations; per-capita rates enable valid comparison.
 \end{alertblock}
 
-## Total Lives Saved by Country and Intervention
-
-```{r tbl-total-lives-saved, echo=FALSE, results="asis"}
-if (!is.null(tbl_total_lives_saved)) {
-  kable(tbl_total_lives_saved, format = "latex", booktabs = TRUE) |>
-    kable_styling(latex_options = c("striped", "hold_position", "scale_down"),
-                  font_size = 7, full_width = TRUE) |>
-    footnote(general = "HTN totals reflect program population; TFA totals reflect national population. Combined totals are not shown where populations differ.")
-} else {
-  cat("\\textit{PLACEHOLDER: Total lives saved table not yet available. Knit report.Rmd to generate.}")
-}
-```
-
 <!-- ======================================================================
-     8d. EXISTING RESULT DETAIL SLIDES (retained)
+     8e. EXISTING RESULT DETAIL SLIDES (retained)
      ====================================================================== -->
 
 <!-- ## Deaths Averted by Intervention (All Scenarios) -->
@@ -707,27 +753,6 @@ Bangladesh: `r if (exists("total_bd_chart_fmt")) total_bd_chart_fmt else "N/A"` 
 \end{exampleblock}
 
 \footnotesize Cumulative deaths averted by intervention type. HTN figures reflect program population; TFA figures reflect national population.
-
-## Bangladesh: Deaths Averted by Cause
-
-```{r bangladesh-cause}
-if (!is.null(sl_bangladesh) && !is.null(sl_bangladesh$cause)) {
-  cause_map_bgd <- c(ihd = "IHD", istroke = "Ischemic stroke",
-                      hstroke = "Hemorrhagic stroke", hhd = "Hypertensive HD")
-  dt_bgd_cause <- copy(sl_bangladesh$cause)
-  dt_bgd_cause[, cause_lbl := cause_map_bgd[cause]]
-  dt_bgd_cause[is.na(cause_lbl), cause_lbl := cause]
-
-  kable(dt_bgd_cause[, .(Scenario = scenario, Cause = cause_lbl,
-                          `Deaths Averted` = averted)],
-        format = "latex", booktabs = TRUE,
-        caption = "Bangladesh: deaths averted by scenario and cause") |>
-    kable_styling(latex_options = c("hold_position", "scale_down"),
-                  font_size = 8)
-} else {
-  cat("\\textit{PLACEHOLDER: Bangladesh cause-level results not yet available.}")
-}
-```
 
 <!-- ======================================================================
      10. DISCUSSION & INTERPRETATION
