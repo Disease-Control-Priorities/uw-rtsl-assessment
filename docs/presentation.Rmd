@@ -780,9 +780,9 @@ The model does not include formal uncertainty quantification (e.g., probabilisti
 \begin{enumerate}
   \item \textbf{Validate country-level inputs} with national program managers --- particularly 2025 control rates and enrollment data
   \item \textbf{Extend the TFA module} with updated exposure data and additional country coverage as new policies are enacted
-  \item \textbf{Integrate statin therapy} for a comprehensive three-intervention assessment
 \end{enumerate}
 
+<!-- \item \textbf{Integrate statin therapy} for a comprehensive three-intervention assessment -->
   <!-- \item \textbf{Add probabilistic sensitivity analysis} to quantify uncertainty around key parameters and provide confidence intervals -->
 
 \medskip
