@@ -853,9 +853,12 @@ dt_program_pop <- tryCatch({
 # TOTAL COUNTRY POPULATION age 20+ per location-year
 # (from UNWPP, same source as 05_build_baseline.R)
 dt_total_pop <- tryCatch({
-  pop_raw <- fread(paste0(wd_data, "PopulationsAge20_2050.csv"))
+  # save for reporting estimates in the report
+  pop_raw <- readRDS(file = paste0(wd_data,"dt_pop_estimates_output_report.rds"))
+  
+  # pop_raw <- fread(paste0(wd_data, "PopulationsAge20_2050.csv"))
   if ("year_id" %in% names(pop_raw)) setnames(pop_raw, "year_id", "year")
-  pop_raw[, .(total_population = sum(Nx, na.rm = TRUE)),
+  pop_raw[, .(total_population = sum(population, na.rm = TRUE)),
           by = .(location, year)]
 }, error = function(e) {
   message("PopulationsAge20_2050.csv not found ",

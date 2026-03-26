@@ -69,7 +69,7 @@ locs <- unique(b_rates$location)
 
 # Here we save a country wide population projection ages 20-95+ to plug in
 # in the model outputs to multiply by laves save per one million
-dt_pop_output <- b_rates[, .(population = sum(Nx)), by = .(location, year, sex, age)]
+dt_pop_output <- dt_pop_unwpp[age>=20, .(population = sum(Nx)), by = .(location, year, sex, age)]
 
 dt_pop_output[, age_cat := fcase(
   age >= 20 & age <= 29, "<=30",
