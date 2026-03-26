@@ -69,12 +69,21 @@ sl_dt_annual    <- load_sl("sl_dt_annual.rds")
 sl_bangladesh   <- load_sl("sl_bangladesh.rds")
 sl_tab_scenario <- load_sl("sl_tab_scenario.rds")
 
-# ---- New slide artefacts (from "Objects for Presentation — New Slides") ----
-fig_htn_control_rates <- load_sl("sl_fig_htn_control_rates.rds")
-tbl_tfa_countries     <- load_sl("sl_tbl_tfa_countries.rds")
-fig_htn_per1m         <- load_sl("sl_fig_htn_per1m.rds")
-fig_tfa_per1m         <- load_sl("sl_fig_tfa_per1m.rds")
-fig_combined_per1m    <- load_sl("sl_fig_combined_per1m.rds")
+# ---- New slide artefacts (Data Sources & Key Variables section) ----
+fig_htn_control_rates      <- load_sl("sl_fig_htn_control_rates.rds")
+tbl_tfa_countries           <- load_sl("sl_tbl_tfa_countries.rds")
+tbl_htn_program_vs_country <- load_sl("sl_tbl_htn_program_vs_country.rds")
+tbl_countries_by_region    <- load_sl("sl_tbl_countries_by_region.rds")
+
+# ---- New slide artefacts (Results section) ----
+fig_htn_per1m              <- load_sl("sl_fig_htn_per1m.rds")
+fig_tfa_per1m              <- load_sl("sl_fig_tfa_per1m.rds")
+fig_combined_per1m         <- load_sl("sl_fig_combined_per1m.rds")
+tbl_total_lives_saved      <- load_sl("sl_tbl_total_lives_saved.rds")
+
+# ---- New slide artefacts (Bangladesh section) ----
+tbl_bangladesh_summary     <- load_sl("sl_tbl_bangladesh_summary.rds")
+fig_bangladesh_cumulative  <- load_sl("sl_fig_bangladesh_cumulative.rds")
 
 # ---- PNG paths for pre-rendered figures -------------------------------------
 png_htn_program   <- paste0(wd_outp, "assessment_policy_htn_program.png")
@@ -215,21 +224,6 @@ kable(ds, align = "lll", escape = FALSE, booktabs = TRUE, format = "latex",
   column_spec(3, width = "3.5cm")
 ```
 
-## Countries with TFA Elimination Policies: Year Established
-
-```{r tfa-policy-timeline}
-if (!is.null(tbl_tfa_countries)) {
-  kable(tbl_tfa_countries, format = "latex", booktabs = TRUE,
-        col.names = c("Country", "Year Established", "Year in Effect")) |>
-    kable_styling(latex_options = c("striped", "hold_position"),
-                  font_size = 8, full_width = TRUE)
-} else {
-  cat("\\textit{PLACEHOLDER: TFA policy timeline not yet available. Knit report.Rmd to generate.}")
-}
-```
-
-\note{This table shows `r if (!is.null(tbl_tfa_countries)) nrow(tbl_tfa_countries) else "N"` countries with enacted TFA elimination policies. Note any regional clustering --- many early adopters are in the Americas and Europe, with more recent policy adoption in South-East Asia.}
-
 ## Observed and Projected Hypertension Control Rates by Country
 
 ```{r fig-htn-control-rates, fig.height=3.4}
@@ -243,7 +237,69 @@ if (!is.null(fig_htn_control_rates)) {
 }
 ```
 
-\note{The "program control rate" is the proportion of enrolled hypertensive patients whose blood pressure is controlled (typically <140/90 mmHg). Observed values (dots) come from the HTN Global Tracker (2017--2025). The projection assumption is conservative: each country's 2025 observed rate is held constant to 2050 (dashed lines), with no further improvement assumed.}
+\note{The "program control rate" is the proportion of enrolled hypertensive patients whose blood pressure is controlled (typically <140/90 mmHg). Observed values (2017--2025) come from the HTN Global Tracker. The projection holds each country's 2024 observed rate constant to 2050 (dashed lines). China, Ecuador, and Bangladesh are highlighted.}
+
+## RTSL Hypertension Program Enrollment Over Time
+
+```{r fig-enrollment-trend, echo=FALSE, out.width="95%", fig.align="center"}
+if (file.exists(png_enrollment)) {
+  knitr::include_graphics(png_enrollment)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Enrollment trend\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+\footnotesize RTSL hypertension program enrollment over time by country.
+
+## Countries Included in the Assessment, by Region
+
+```{r tbl-countries-by-region, echo=FALSE, results="asis"}
+if (!is.null(tbl_countries_by_region)) {
+  kable(tbl_countries_by_region, format = "latex", booktabs = TRUE,
+        col.names = c("Region", "Countries"),
+        caption = "Countries included in the assessment, by region.") |>
+    kable_styling(latex_options = c("striped", "hold_position"),
+                  font_size = 8, full_width = TRUE) |>
+    column_spec(1, bold = TRUE, width = "3.5cm") |>
+    column_spec(2, width = "10cm")
+} else {
+  cat("\\textit{PLACEHOLDER: Countries by region not yet available. Knit report.Rmd to generate.}")
+}
+```
+
+## Countries with TFA Elimination Policies (RTSL-Engaged)
+
+```{r tfa-policy-timeline}
+if (!is.null(tbl_tfa_countries)) {
+  kable(tbl_tfa_countries, format = "latex", booktabs = TRUE,
+        col.names = c("Country", "Year Established", "Year in Effect", "RTSL Engaged")) |>
+    kable_styling(latex_options = c("striped", "hold_position"),
+                  font_size = 8, full_width = TRUE)
+} else {
+  cat("\\textit{PLACEHOLDER: TFA policy timeline not yet available. Knit report.Rmd to generate.}")
+}
+```
+
+\note{This table shows `r if (!is.null(tbl_tfa_countries)) nrow(tbl_tfa_countries) else "N"` countries with enacted TFA elimination policies where RTSL was directly engaged.}
+
+## Hypertension Program Control vs. National Control Rate by Country
+
+```{r tbl-htn-program-vs-country, echo=FALSE, results="asis"}
+if (!is.null(tbl_htn_program_vs_country)) {
+  underperf <- attr(tbl_htn_program_vs_country, "underperforming_rows")
+  k <- kable(tbl_htn_program_vs_country, format = "latex", booktabs = TRUE) |>
+    kable_styling(latex_options = c("striped", "hold_position"),
+                  font_size = 7, full_width = TRUE)
+  if (length(underperf) > 0) {
+    k <- k |> row_spec(underperf, background = "#FFDDC1")
+  }
+  k <- k |> footnote(general = "Highlighted rows: program control rate below national average.")
+  k
+} else {
+  cat("\\textit{PLACEHOLDER: HTN program vs country table not yet available. Knit report.Rmd to generate.}")
+}
+```
 
 <!-- ======================================================================
      5. ESTIMAND, CAUSAL FRAMEWORK & COUNTERFACTUAL IMPUTATION
@@ -476,6 +532,19 @@ if (!is.null(fig_combined_per1m)) {
 Totals are not shown. Hypertension and TFA interventions have different target populations; per-capita rates enable valid comparison.
 \end{alertblock}
 
+## Total Lives Saved by Country and Intervention
+
+```{r tbl-total-lives-saved, echo=FALSE, results="asis"}
+if (!is.null(tbl_total_lives_saved)) {
+  kable(tbl_total_lives_saved, format = "latex", booktabs = TRUE) |>
+    kable_styling(latex_options = c("striped", "hold_position", "scale_down"),
+                  font_size = 7, full_width = TRUE) |>
+    footnote(general = "HTN totals reflect program population; TFA totals reflect national population. Combined totals are not shown where populations differ.")
+} else {
+  cat("\\textit{PLACEHOLDER: Total lives saved table not yet available. Knit report.Rmd to generate.}")
+}
+```
+
 <!-- ======================================================================
      8d. EXISTING RESULT DETAIL SLIDES (retained)
      ====================================================================== -->
@@ -595,22 +664,49 @@ cat("
 ")
 ```
 
-## Bangladesh: Key Results
+## Bangladesh: Cumulative Impact Summary
 
-```{r bangladesh-results}
-# Pre-computed by report.Rmd -> output/slides/sl_bangladesh.rds
-if (!is.null(sl_bangladesh)) {
-  # Summary table
+```{r bangladesh-summary-table, echo=FALSE, results="asis"}
+if (!is.null(tbl_bangladesh_summary)) {
+  total_bd_val <- attr(tbl_bangladesh_summary, "total_bd_averted")
+  total_bd_fmt <- if (!is.null(total_bd_val)) formatC(round(total_bd_val), format = "d", big.mark = ",") else "N/A"
+
+  kable(tbl_bangladesh_summary, format = "latex", booktabs = TRUE,
+        caption = "Bangladesh: cumulative program-attributable impact by intervention") |>
+    kable_styling(latex_options = c("hold_position"), font_size = 9) |>
+    column_spec(3, bold = TRUE)
+} else if (!is.null(sl_bangladesh)) {
   kable(sl_bangladesh$summary,
         col.names = c("Scenario", "Deaths Averted (2017--2050)"),
         format = "latex", booktabs = TRUE,
         caption = "Bangladesh: program-attributable deaths averted") |>
     kable_styling(latex_options = c("hold_position"), font_size = 9)
 } else {
-  cat("\\textit{PLACEHOLDER: Bangladesh results not yet available.
-      Knit report.Rmd to generate sl\\_bangladesh.rds.}")
+  cat("\\textit{PLACEHOLDER: Bangladesh summary not yet available. Knit report.Rmd to generate.}")
 }
 ```
+
+\footnotesize HTN totals reflect program population; TFA totals reflect national population.
+
+## Bangladesh: Cumulative Deaths Averted Over Time
+
+```{r bangladesh-cumulative-chart, echo=FALSE, fig.height=3.4}
+if (!is.null(fig_bangladesh_cumulative)) {
+  total_bd_chart <- attr(fig_bangladesh_cumulative, "total_bd")
+  total_bd_chart_fmt <- if (!is.null(total_bd_chart)) formatC(round(total_bd_chart), format = "d", big.mark = ",") else "N/A"
+  print(fig_bangladesh_cumulative)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Bangladesh cumulative chart\n(knit report.Rmd to generate)", cex = 1.2)
+  total_bd_chart_fmt <- "N/A"
+}
+```
+
+\begin{exampleblock}{Bangladesh Impact}
+Bangladesh: `r if (exists("total_bd_chart_fmt")) total_bd_chart_fmt else "N/A"` total deaths averted from 2017--2050 across both interventions.
+\end{exampleblock}
+
+\footnotesize Cumulative deaths averted by intervention type. HTN figures reflect program population; TFA figures reflect national population.
 
 ## Bangladesh: Deaths Averted by Cause
 

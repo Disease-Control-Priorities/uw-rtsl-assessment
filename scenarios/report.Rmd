@@ -1754,43 +1754,81 @@ saveRDS(sl_tab_scenario, paste0(slides_dir, "sl_tab_scenario.rds"))
 message("SL-11 saved: sl_tab_scenario.rds")
 ```
 
-## Objects for Presentation — New Slides
+## Objects for Presentation — Data Sources & Key Variables Section
 
 ```{r sl-fig-htn-control-rates, message=FALSE, warning=FALSE, echo=FALSE}
-# ---- fig_htn_control_rates: Observed + projected HTN control rates ----
+# ---- A1: fig_htn_control_rates — Observed (2017–2025) vs Projected (2026–2050) ----
 # Source: htn_scenarios (loaded earlier from htn_control_scenarios_by_loc_year.csv)
+# Highlights: China, Ecuador, Bangladesh
+library(ggrepel)
+
 if (!is.null(htn_scenarios)) {
   dt_htn_cr <- htn_scenarios[year <= 2050,
     .(location, year,
       control_rate = control_rate_program,
       observed     = control_rate_observed)]
 
-  # Observed points: where observed == 1
+  highlight_countries <- c("China", "Ecuador", "Bangladesh")
 
-  dt_obs <- dt_htn_cr[observed == 1]
-  # Projected line: year >= 2024 (flat at 2024 level)
-  dt_proj <- dt_htn_cr[year >= 2024]
+  # Build a period column: Historical (2017–2025) vs Projected (2026–2050)
+  # For the line we need continuous connection, so we duplicate 2025 into both periods
+  dt_hist <- dt_htn_cr[year <= 2025]
+  dt_hist[, period := "Observed (2017-2025)"]
+  dt_proj <- dt_htn_cr[year >= 2025]
+  dt_proj[, period := "Projected (2026-2050)"]
+  dt_all <- rbind(dt_hist, dt_proj)
 
-  fig_htn_control_rates <- ggplot() +
-    geom_line(data = dt_proj,
-              aes(x = year, y = control_rate * 100, group = location),
-              color = "grey55", linewidth = 0.5, linetype = "dashed", alpha = 0.7) +
-    geom_point(data = dt_obs,
-               aes(x = year, y = control_rate * 100, group = location),
-               color = "#2171B5", size = 1.0, alpha = 0.6) +
-    # Invisible points for the legend
-    geom_point(aes(x = 0, y = 0, shape = "Observed"), color = "#2171B5",
-               size = 2, show.legend = TRUE) +
-    geom_line(aes(x = c(0, 1), y = c(0, 0), linetype = "Projected (maintained at 2024)"),
-              color = "grey55", linewidth = 0.5, show.legend = TRUE) +
-    scale_shape_manual(name = NULL, values = c("Observed" = 16)) +
-    scale_linetype_manual(name = NULL, values = c("Projected (maintained at 2024)" = "dashed")) +
+  # Highlight vs background
+
+  dt_all[, highlighted := location %in% highlight_countries]
+  dt_all[, alpha_val := fifelse(highlighted, 1.0, 0.3)]
+  dt_all[, size_val  := fifelse(highlighted, 0.9, 0.4)]
+
+  # Labels at rightmost point for highlighted countries
+  dt_labels <- dt_all[highlighted == TRUE & year == max(year),
+                       .(location, year, control_rate, period)]
+  dt_labels <- unique(dt_labels, by = "location")
+
+  fig_htn_control_rates <- ggplot(dt_all,
+         aes(x = year, y = control_rate * 100, group = interaction(location, period))) +
+    # Background countries
+    geom_line(data = dt_all[highlighted == FALSE],
+              aes(color = period, linetype = period),
+              linewidth = 0.35, alpha = 0.3) +
+    geom_point(data = dt_all[highlighted == FALSE & observed == 1],
+               aes(x = year, y = control_rate * 100),
+               color = "grey60", size = 0.5, alpha = 0.3) +
+    # Highlighted countries
+    geom_line(data = dt_all[highlighted == TRUE],
+              aes(color = period, linetype = period),
+              linewidth = 0.9, alpha = 1.0) +
+    geom_point(data = dt_all[highlighted == TRUE & observed == 1],
+               aes(x = year, y = control_rate * 100),
+               color = "#2171B5", size = 1.5, alpha = 0.9) +
+    # Country labels for highlighted
+    geom_label_repel(data = dt_labels,
+                     aes(x = year, y = control_rate * 100, label = location),
+                     size = 2.5, nudge_x = 1, segment.size = 0.3,
+                     fontface = "bold", fill = "white", label.size = 0.2,
+                     inherit.aes = FALSE) +
+    scale_color_manual(
+      name = NULL,
+      values = c("Observed (2017-2025)" = "#2171B5",
+                 "Projected (2026-2050)" = "#D4880F"),
+      guide = guide_legend(override.aes = list(linewidth = 1, alpha = 1))
+    ) +
+    scale_linetype_manual(
+      name = NULL,
+      values = c("Observed (2017-2025)" = "solid",
+                 "Projected (2026-2050)" = "dashed")
+    ) +
     scale_x_continuous(breaks = seq(2017, 2050, 5),
-                       limits = c(2017, 2051), expand = c(0, 0)) +
+                       limits = c(2017, 2054), expand = c(0, 0)) +
     scale_y_continuous(limits = c(0, 60), expand = c(0, 0)) +
     labs(
-      x = "Year", y = "Program Control Rate (%)",
-      caption = "Observed (dots) and projected (maintained at 2024 level) program control rates"
+      title = "Observed and Projected Hypertension Program Control Rates",
+      x = "Year", y = "Control Rate (%)",
+      caption = "Dots = observed; lines = projected at 2024 level (2026-2050). China, Ecuador, and Bangladesh highlighted."
     ) +
     theme_minimal(base_size = 11) +
     theme(legend.position = "bottom",
@@ -1798,7 +1836,7 @@ if (!is.null(htn_scenarios)) {
           plot.caption = element_text(size = 7, hjust = 0))
 
   saveRDS(fig_htn_control_rates, paste0(slides_dir, "sl_fig_htn_control_rates.rds"))
-  message("SL-NEW saved: sl_fig_htn_control_rates.rds")
+  message("SL-A1 saved: sl_fig_htn_control_rates.rds")
 } else {
   fig_htn_control_rates <- NULL
   message("htn_scenarios not available — skipping fig_htn_control_rates")
@@ -1806,8 +1844,9 @@ if (!is.null(htn_scenarios)) {
 ```
 
 ```{r sl-tbl-tfa-countries, message=FALSE, warning=FALSE, echo=FALSE}
-# ---- tbl_tfa_countries: TFA policy timeline table ----
+# ---- A2: tbl_tfa_countries — TFA policy table, RTSL-engaged countries only ----
 # Source: tfa_policy_scenarios_assessment.rds
+# Engagement column: tfa_rtsl_engagement (values "Yes"/"No", from 04_define_interventions.R)
 dt_tfa_scenarios <- tryCatch(
   as.data.table(readRDS(paste0(wd_data, "tfa_policy_scenarios_assessment.rds"))),
   error = function(e) NULL
@@ -1817,13 +1856,17 @@ if (!is.null(dt_tfa_scenarios)) {
   # Inspect actual column names (logged for verification)
   message("TFA scenario columns: ", paste(names(dt_tfa_scenarios), collapse = ", "))
 
-  # Keep only countries with a TFA best-practice policy date
-  dt_tfa_pol <- dt_tfa_scenarios[!is.na(tfa_bpp_date_passed)]
+  # CRITICAL FILTER: keep only RTSL-engaged countries (case-insensitive)
+  dt_tfa_pol <- dt_tfa_scenarios[
+    !is.na(tfa_bpp_date_passed) &
+    tolower(tfa_rtsl_engagement) == "yes"
+  ]
 
   # One row per country: earliest record (policy establishment)
   dt_tfa_pol <- dt_tfa_pol[, .(
     `Year Established` = as.integer(min(tfa_bpp_date_passed, na.rm = TRUE)),
-    `Year in Effect`   = as.integer(min(tfa_bpp_date_in_effect, na.rm = TRUE))
+    `Year in Effect`   = as.integer(min(tfa_bpp_date_in_effect, na.rm = TRUE)),
+    `RTSL Engaged`     = "Yes"
   ), by = .(Country = location)]
 
   # Sort by year established ascending
@@ -1831,10 +1874,227 @@ if (!is.null(dt_tfa_scenarios)) {
 
   tbl_tfa_countries <- dt_tfa_pol
   saveRDS(tbl_tfa_countries, paste0(slides_dir, "sl_tbl_tfa_countries.rds"))
-  message("SL-NEW saved: sl_tbl_tfa_countries.rds")
+  message("SL-A2 saved: sl_tbl_tfa_countries.rds")
 } else {
   tbl_tfa_countries <- NULL
   message("tfa_policy_scenarios_assessment.rds not found — skipping tbl_tfa_countries")
+}
+```
+
+```{r sl-tbl-htn-program-vs-country, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- A3: tbl_htn_program_vs_country — Program vs National Control Rate ----
+# Source: htn_control_scenarios_by_loc_year.csv
+# Columns used: location, year, control_rate_program, htncov2
+if (!is.null(htn_scenarios)) {
+  message("HTN scenario columns: ", paste(names(htn_scenarios), collapse = ", "))
+
+  # Keep rows where both control_rate_program and htncov2 are available
+  dt_htn_compare <- htn_scenarios[
+    !is.na(control_rate_program) & !is.na(htncov2),
+    .(location, year, htncov2, control_rate_program)
+  ]
+
+  # Use most recent available year per country
+  dt_htn_compare[, max_year := max(year), by = location]
+  dt_htn_compare <- dt_htn_compare[year == max_year]
+  dt_htn_compare[, max_year := NULL]
+
+  # Compute difference: positive = program outperforms, negative = underperforms
+  dt_htn_compare[, program_vs_country_diff := control_rate_program - htncov2]
+
+  # Sort by difference ascending (worst performers first)
+  setorder(dt_htn_compare, program_vs_country_diff)
+
+  # Format for display
+  dt_htn_compare[, `:=`(
+    `National Control Rate` = paste0(round(htncov2 * 100, 1), "%"),
+    `Program Control Rate`  = paste0(round(control_rate_program * 100, 1), "%"),
+    `Difference (pp)`       = round(program_vs_country_diff * 100, 1)
+  )]
+
+  # Identify underperforming rows for highlighting
+  underperforming_rows <- which(dt_htn_compare$program_vs_country_diff < 0)
+
+  tbl_htn_program_vs_country <- dt_htn_compare[, .(
+    Country = location,
+    `National Control Rate`,
+    `Program Control Rate`,
+    `Difference (pp)`
+  )]
+
+  # Store the row indices for highlighting in presentation
+  attr(tbl_htn_program_vs_country, "underperforming_rows") <- underperforming_rows
+
+  saveRDS(tbl_htn_program_vs_country, paste0(slides_dir, "sl_tbl_htn_program_vs_country.rds"))
+  message("SL-A3 saved: sl_tbl_htn_program_vs_country.rds")
+} else {
+  tbl_htn_program_vs_country <- NULL
+  message("htn_scenarios not available — skipping tbl_htn_program_vs_country")
+}
+```
+
+```{r sl-tbl-countries-by-region, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- A5: tbl_countries_by_region — Formatted table for presentation ----
+# Source: countries_by_region (computed earlier in country-list chunk)
+# Columns: Region, Countries (comma-separated string)
+if (exists("countries_by_region") && nrow(countries_by_region) > 0) {
+  message("countries_by_region columns: ", paste(names(countries_by_region), collapse = ", "))
+
+  tbl_countries_by_region <- countries_by_region
+  saveRDS(tbl_countries_by_region, paste0(slides_dir, "sl_tbl_countries_by_region.rds"))
+  message("SL-A5 saved: sl_tbl_countries_by_region.rds")
+} else {
+  tbl_countries_by_region <- NULL
+  message("countries_by_region not available — skipping tbl_countries_by_region")
+}
+```
+
+## Objects for Presentation — Results Section
+
+```{r sl-tbl-total-lives-saved, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- B1: tbl_total_lives_saved — Absolute total deaths averted by country ----
+# Source: dt_excel_per1m (computed above)
+# IMPORTANT: HTN uses program_population denominator; TFA uses total country population
+# n_deaths_averted is already computed as absolute totals in dt_excel_per1m
+if (exists("dt_excel_per1m") && nrow(dt_excel_per1m) > 0) {
+  message("dt_excel_per1m columns: ", paste(names(dt_excel_per1m), collapse = ", "))
+
+  # Summarize cumulative absolute deaths averted per country x scenario
+  dt_lives <- dt_excel_per1m[
+    scenario %in% c("HTN Control (Program)", "TFA Elimination") & year >= 2017,
+    .(total_averted = sum(n_deaths_averted, na.rm = TRUE)),
+    by = .(location, scenario)
+  ]
+
+  dt_lives_wide <- dcast(dt_lives, location ~ scenario,
+                          value.var = "total_averted", fill = 0)
+  # Rename columns for display
+  old_names <- names(dt_lives_wide)
+  setnames(dt_lives_wide,
+           old = old_names,
+           new = c("Country", "HTN Deaths Averted", "TFA Deaths Averted"))
+
+  # Do NOT show combined column — populations differ
+  # Sort by HTN deaths averted descending
+  setorder(dt_lives_wide, -`HTN Deaths Averted`)
+
+  # Format with comma separators
+  dt_lives_wide[, `HTN Deaths Averted` := formatC(round(`HTN Deaths Averted`),
+                                                    format = "d", big.mark = ",")]
+  dt_lives_wide[, `TFA Deaths Averted` := formatC(round(`TFA Deaths Averted`),
+                                                    format = "d", big.mark = ",")]
+
+  tbl_total_lives_saved <- dt_lives_wide
+  saveRDS(tbl_total_lives_saved, paste0(slides_dir, "sl_tbl_total_lives_saved.rds"))
+  message("SL-B1 saved: sl_tbl_total_lives_saved.rds")
+} else {
+  tbl_total_lives_saved <- NULL
+  message("dt_excel_per1m not available — skipping tbl_total_lives_saved")
+}
+```
+
+```{r sl-tbl-bangladesh-summary, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- B2: tbl_bangladesh_summary — Bangladesh cumulative impact summary ----
+# Source: dt_excel_per1m, filtered to Bangladesh
+# One row per intervention (HTN, TFA)
+if (exists("dt_excel_per1m") && nrow(dt_excel_per1m) > 0) {
+  dt_bd <- dt_excel_per1m[
+    location == "Bangladesh" &
+    scenario %in% c("HTN Control (Program)", "TFA Elimination") &
+    year >= 2017
+  ]
+
+  dt_bd_summary <- dt_bd[, .(
+    deaths_averted_per_1M = sum(deaths_averted_per_1M, na.rm = TRUE),
+    total_deaths_averted  = sum(n_deaths_averted, na.rm = TRUE),
+    year_min = min(year),
+    year_max = max(year)
+  ), by = scenario]
+
+  dt_bd_summary[, Intervention := fifelse(
+    scenario == "HTN Control (Program)",
+    "Hypertension Control", "TFA Elimination"
+  )]
+  dt_bd_summary[, `Deaths Averted per 1M` := formatC(
+    round(deaths_averted_per_1M), format = "d", big.mark = ",")]
+  dt_bd_summary[, `Total Deaths Averted` := formatC(
+    round(total_deaths_averted), format = "d", big.mark = ",")]
+  dt_bd_summary[, `Time Horizon` := paste0(year_min, "-", year_max)]
+
+  tbl_bangladesh_summary <- dt_bd_summary[, .(
+    Intervention, `Deaths Averted per 1M`, `Total Deaths Averted`, `Time Horizon`
+  )]
+
+  # Store raw total for inline use in presentation
+  total_bd_averted <- sum(dt_bd_summary$total_deaths_averted, na.rm = TRUE)
+  attr(tbl_bangladesh_summary, "total_bd_averted") <- total_bd_averted
+
+  saveRDS(tbl_bangladesh_summary, paste0(slides_dir, "sl_tbl_bangladesh_summary.rds"))
+  message("SL-B2 saved: sl_tbl_bangladesh_summary.rds")
+} else {
+  tbl_bangladesh_summary <- NULL
+  message("dt_excel_per1m not available — skipping tbl_bangladesh_summary")
+}
+```
+
+```{r sl-fig-bangladesh-cumulative, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- B3: fig_bangladesh_cumulative — Stacked area: cumulative deaths averted ----
+# Source: dt_excel_per1m, Bangladesh, time dimension preserved
+# y-axis: ABSOLUTE cumulative deaths averted (not per 1M)
+if (exists("dt_excel_per1m") && nrow(dt_excel_per1m) > 0) {
+  dt_bd_ts <- dt_excel_per1m[
+    location == "Bangladesh" &
+    scenario %in% c("HTN Control (Program)", "TFA Elimination") &
+    year >= 2017,
+    .(year, scenario, n_deaths_averted)
+  ]
+
+  # Compute cumulative over time by scenario
+  setorder(dt_bd_ts, scenario, year)
+  dt_bd_ts[, cum_averted := cumsum(n_deaths_averted), by = scenario]
+
+  # Intervention labels for display
+  dt_bd_ts[, intervention := fifelse(
+    scenario == "HTN Control (Program)",
+    "Hypertension Control", "TFA Elimination"
+  )]
+
+  # Total at final year for annotation
+  total_bd <- dt_bd_ts[year == max(year), sum(cum_averted, na.rm = TRUE)]
+  max_year <- max(dt_bd_ts$year)
+
+  fig_bangladesh_cumulative <- ggplot(dt_bd_ts,
+         aes(x = year, y = cum_averted, fill = intervention)) +
+    geom_area(alpha = 0.8, position = "stack") +
+    scale_fill_manual(
+      values = c("Hypertension Control" = "#2171B5",
+                 "TFA Elimination"      = "#E31A1C"),
+      name = "Intervention"
+    ) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_continuous(breaks = seq(2017, 2050, 5)) +
+    annotate("text", x = max_year, y = total_bd * 0.95,
+             label = paste0("Total: ", formatC(round(total_bd),
+                            format = "d", big.mark = ",")),
+             hjust = 1, vjust = 0, size = 3.5, fontface = "bold") +
+    labs(
+      title = "Bangladesh: Cumulative Deaths Averted Over Time",
+      x = "Year", y = "Cumulative Deaths Averted",
+      caption = "Cumulative deaths averted by intervention type, Bangladesh 2024-2050.\nHTN figures reflect program population; TFA figures reflect national population."
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(legend.position = "bottom",
+          panel.grid.minor = element_blank(),
+          plot.caption = element_text(size = 7, hjust = 0))
+
+  # Store total for inline use in presentation
+  attr(fig_bangladesh_cumulative, "total_bd") <- total_bd
+
+  saveRDS(fig_bangladesh_cumulative, paste0(slides_dir, "sl_fig_bangladesh_cumulative.rds"))
+  message("SL-B3 saved: sl_fig_bangladesh_cumulative.rds")
+} else {
+  fig_bangladesh_cumulative <- NULL
+  message("dt_excel_per1m not available — skipping fig_bangladesh_cumulative")
 }
 ```
 
@@ -1926,9 +2186,14 @@ sl_manifest <- data.table(
     "sl_bangladesh.rds", "sl_tab_scenario.rds",
     "sl_fig_htn_control_rates.rds", "sl_tbl_tfa_countries.rds",
     "sl_fig_htn_per1m.rds", "sl_fig_tfa_per1m.rds",
-    "sl_fig_combined_per1m.rds"
+    "sl_fig_combined_per1m.rds",
+    "sl_tbl_htn_program_vs_country.rds",
+    "sl_tbl_countries_by_region.rds",
+    "sl_tbl_total_lives_saved.rds",
+    "sl_tbl_bangladesh_summary.rds",
+    "sl_fig_bangladesh_cumulative.rds"
   ),
-  type = c(rep("rds", 6), rep("png", 3), rep("rds", 7)),
+  type = c(rep("rds", 6), rep("png", 3), rep("rds", 12)),
   consumed_by = c(
     "inline scalars", "tab-summary kable", "tab-region kable",
     "fig-top-countries ggplot", "fig-by-cause ggplot", "fig-deaths-averted ggplot",
@@ -1937,11 +2202,16 @@ sl_manifest <- data.table(
     "fig-cum-averted include_graphics",
     "bangladesh-results kable (presentation.Rmd)",
     "scenario-table kable (presentation.Rmd)",
-    "HTN control rates figure (presentation.Rmd)",
-    "TFA policy timeline table (presentation.Rmd)",
+    "A1: HTN control rates figure (presentation.Rmd)",
+    "A2: TFA policy timeline table (presentation.Rmd)",
     "HTN per-1M results figure (presentation.Rmd)",
     "TFA per-1M results figure (presentation.Rmd)",
-    "Combined per-1M figure (presentation.Rmd)"
+    "Combined per-1M figure (presentation.Rmd)",
+    "A3: HTN program vs country table (presentation.Rmd)",
+    "A5: Countries by region table (presentation.Rmd)",
+    "B1: Total lives saved table (presentation.Rmd)",
+    "B2: Bangladesh summary table (presentation.Rmd)",
+    "B3: Bangladesh cumulative chart (presentation.Rmd)"
   )
 )
 saveRDS(sl_manifest, paste0(slides_dir, "sl_manifest.rds"))
