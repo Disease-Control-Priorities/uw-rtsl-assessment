@@ -1754,6 +1754,168 @@ saveRDS(sl_tab_scenario, paste0(slides_dir, "sl_tab_scenario.rds"))
 message("SL-11 saved: sl_tab_scenario.rds")
 ```
 
+## Objects for Presentation — New Slides
+
+```{r sl-fig-htn-control-rates, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- fig_htn_control_rates: Observed + projected HTN control rates ----
+# Source: htn_scenarios (loaded earlier from htn_control_scenarios_by_loc_year.csv)
+if (!is.null(htn_scenarios)) {
+  dt_htn_cr <- htn_scenarios[year <= 2050,
+    .(location, year,
+      control_rate = control_rate_program,
+      observed     = control_rate_observed)]
+
+  # Observed points: where observed == 1
+
+  dt_obs <- dt_htn_cr[observed == 1]
+  # Projected line: year >= 2024 (flat at 2024 level)
+  dt_proj <- dt_htn_cr[year >= 2024]
+
+  fig_htn_control_rates <- ggplot() +
+    geom_line(data = dt_proj,
+              aes(x = year, y = control_rate * 100, group = location),
+              color = "grey55", linewidth = 0.5, linetype = "dashed", alpha = 0.7) +
+    geom_point(data = dt_obs,
+               aes(x = year, y = control_rate * 100, group = location),
+               color = "#2171B5", size = 1.0, alpha = 0.6) +
+    # Invisible points for the legend
+    geom_point(aes(x = 0, y = 0, shape = "Observed"), color = "#2171B5",
+               size = 2, show.legend = TRUE) +
+    geom_line(aes(x = c(0, 1), y = c(0, 0), linetype = "Projected (maintained at 2024)"),
+              color = "grey55", linewidth = 0.5, show.legend = TRUE) +
+    scale_shape_manual(name = NULL, values = c("Observed" = 16)) +
+    scale_linetype_manual(name = NULL, values = c("Projected (maintained at 2024)" = "dashed")) +
+    scale_x_continuous(breaks = seq(2017, 2050, 5),
+                       limits = c(2017, 2051), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(0, 60), expand = c(0, 0)) +
+    labs(
+      x = "Year", y = "Program Control Rate (%)",
+      caption = "Observed (dots) and projected (maintained at 2024 level) program control rates"
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(legend.position = "bottom",
+          panel.grid.minor = element_blank(),
+          plot.caption = element_text(size = 7, hjust = 0))
+
+  saveRDS(fig_htn_control_rates, paste0(slides_dir, "sl_fig_htn_control_rates.rds"))
+  message("SL-NEW saved: sl_fig_htn_control_rates.rds")
+} else {
+  fig_htn_control_rates <- NULL
+  message("htn_scenarios not available — skipping fig_htn_control_rates")
+}
+```
+
+```{r sl-tbl-tfa-countries, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- tbl_tfa_countries: TFA policy timeline table ----
+# Source: tfa_policy_scenarios_assessment.rds
+dt_tfa_scenarios <- tryCatch(
+  as.data.table(readRDS(paste0(wd_data, "tfa_policy_scenarios_assessment.rds"))),
+  error = function(e) NULL
+)
+
+if (!is.null(dt_tfa_scenarios)) {
+  # Inspect actual column names (logged for verification)
+  message("TFA scenario columns: ", paste(names(dt_tfa_scenarios), collapse = ", "))
+
+  # Keep only countries with a TFA best-practice policy date
+  dt_tfa_pol <- dt_tfa_scenarios[!is.na(tfa_bpp_date_passed)]
+
+  # One row per country: earliest record (policy establishment)
+  dt_tfa_pol <- dt_tfa_pol[, .(
+    `Year Established` = as.integer(min(tfa_bpp_date_passed, na.rm = TRUE)),
+    `Year in Effect`   = as.integer(min(tfa_bpp_date_in_effect, na.rm = TRUE))
+  ), by = .(Country = location)]
+
+  # Sort by year established ascending
+  setorder(dt_tfa_pol, `Year Established`)
+
+  tbl_tfa_countries <- dt_tfa_pol
+  saveRDS(tbl_tfa_countries, paste0(slides_dir, "sl_tbl_tfa_countries.rds"))
+  message("SL-NEW saved: sl_tbl_tfa_countries.rds")
+} else {
+  tbl_tfa_countries <- NULL
+  message("tfa_policy_scenarios_assessment.rds not found — skipping tbl_tfa_countries")
+}
+```
+
+```{r sl-per1m-result-figures, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Separate HTN and TFA result figures from dt_excel_per1m ----
+# dt_excel_per1m columns (verified above):
+#   location, year, scenario, deaths, deaths_averted,
+#   cf_deaths_ref, population, program_population,
+#   deaths_per_1M, deaths_averted_per_1M, n_deaths_averted, pct_averted
+
+# Cumulative deaths averted per 1M by country and scenario
+dt_per1m_cum <- dt_excel_per1m[
+  scenario != "Counterfactual" & year >= 2017,
+  .(deaths_averted_per_1M = sum(deaths_averted_per_1M, na.rm = TRUE)),
+  by = .(location, scenario)
+]
+
+# --- fig_htn_per1m: HTN results only ---
+dt_htn_per1m <- dt_per1m_cum[scenario == "HTN Control (Program)"]
+setorder(dt_htn_per1m, -deaths_averted_per_1M)
+dt_htn_per1m[, location := factor(location, levels = rev(location))]
+
+fig_htn_per1m <- ggplot(dt_htn_per1m,
+       aes(x = deaths_averted_per_1M, y = location)) +
+  geom_col(fill = "#2171B5", width = 0.7) +
+  scale_x_continuous(labels = comma, expand = c(0, 0)) +
+  labs(x = "Cumulative Deaths Averted per 1M (2017-2050)", y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 6))
+saveRDS(fig_htn_per1m, paste0(slides_dir, "sl_fig_htn_per1m.rds"))
+
+# --- fig_tfa_per1m: TFA results only ---
+dt_tfa_per1m <- dt_per1m_cum[scenario == "TFA Elimination"]
+setorder(dt_tfa_per1m, -deaths_averted_per_1M)
+dt_tfa_per1m[, location := factor(location, levels = rev(location))]
+
+fig_tfa_per1m <- ggplot(dt_tfa_per1m,
+       aes(x = deaths_averted_per_1M, y = location)) +
+  geom_col(fill = "#E31A1C", width = 0.7) +
+  scale_x_continuous(labels = comma, expand = c(0, 0)) +
+  labs(x = "Cumulative Deaths Averted per 1M (2017-2050)", y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 6))
+saveRDS(fig_tfa_per1m, paste0(slides_dir, "sl_fig_tfa_per1m.rds"))
+
+message("SL-NEW saved: sl_fig_htn_per1m.rds, sl_fig_tfa_per1m.rds")
+```
+
+```{r sl-fig-combined-per1m, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- fig_combined_per1m: Both interventions side by side per 1M ----
+dt_combined <- dt_per1m_cum[scenario %in% c("HTN Control (Program)", "TFA Elimination")]
+dt_combined[, intervention := scenario]
+
+# Order countries by total combined averted (descending)
+dt_country_order <- dt_combined[, .(total = sum(deaths_averted_per_1M)), by = location]
+setorder(dt_country_order, total)
+dt_combined[, location := factor(location, levels = dt_country_order$location)]
+
+fig_combined_per1m <- ggplot(dt_combined,
+       aes(x = deaths_averted_per_1M, y = location, fill = intervention)) +
+  geom_col(position = "dodge", width = 0.7) +
+  scale_fill_manual(
+    values = c("HTN Control (Program)" = "#2171B5",
+               "TFA Elimination"       = "#E31A1C"),
+    name = "Intervention"
+  ) +
+  scale_x_continuous(labels = comma, expand = c(0, 0)) +
+  labs(x = "Cumulative Deaths Averted per 1 Million (2017-2050)", y = NULL) +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "bottom",
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        axis.text.y = element_text(size = 6))
+saveRDS(fig_combined_per1m, paste0(slides_dir, "sl_fig_combined_per1m.rds"))
+message("SL-NEW saved: sl_fig_combined_per1m.rds")
+```
+
 ```{r slides-manifest, message=FALSE, warning=FALSE, echo=FALSE}
 sl_manifest <- data.table(
   file = c(
@@ -1761,9 +1923,12 @@ sl_manifest <- data.table(
     "sl_tab_top15.rds", "sl_dt_cause.rds", "sl_dt_annual.rds",
     "sl_fig_deaths_averted.png", "sl_fig_top15_countries.png",
     "sl_fig_cum_averted.png",
-    "sl_bangladesh.rds", "sl_tab_scenario.rds"
+    "sl_bangladesh.rds", "sl_tab_scenario.rds",
+    "sl_fig_htn_control_rates.rds", "sl_tbl_tfa_countries.rds",
+    "sl_fig_htn_per1m.rds", "sl_fig_tfa_per1m.rds",
+    "sl_fig_combined_per1m.rds"
   ),
-  type = c(rep("rds", 6), rep("png", 3), rep("rds", 2)),
+  type = c(rep("rds", 6), rep("png", 3), rep("rds", 7)),
   consumed_by = c(
     "inline scalars", "tab-summary kable", "tab-region kable",
     "fig-top-countries ggplot", "fig-by-cause ggplot", "fig-deaths-averted ggplot",
@@ -1771,7 +1936,12 @@ sl_manifest <- data.table(
     "fig-top-countries include_graphics",
     "fig-cum-averted include_graphics",
     "bangladesh-results kable (presentation.Rmd)",
-    "scenario-table kable (presentation.Rmd)"
+    "scenario-table kable (presentation.Rmd)",
+    "HTN control rates figure (presentation.Rmd)",
+    "TFA policy timeline table (presentation.Rmd)",
+    "HTN per-1M results figure (presentation.Rmd)",
+    "TFA per-1M results figure (presentation.Rmd)",
+    "Combined per-1M figure (presentation.Rmd)"
   )
 )
 saveRDS(sl_manifest, paste0(slides_dir, "sl_manifest.rds"))

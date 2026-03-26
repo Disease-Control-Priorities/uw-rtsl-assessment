@@ -69,6 +69,13 @@ sl_dt_annual    <- load_sl("sl_dt_annual.rds")
 sl_bangladesh   <- load_sl("sl_bangladesh.rds")
 sl_tab_scenario <- load_sl("sl_tab_scenario.rds")
 
+# ---- New slide artefacts (from "Objects for Presentation — New Slides") ----
+fig_htn_control_rates <- load_sl("sl_fig_htn_control_rates.rds")
+tbl_tfa_countries     <- load_sl("sl_tbl_tfa_countries.rds")
+fig_htn_per1m         <- load_sl("sl_fig_htn_per1m.rds")
+fig_tfa_per1m         <- load_sl("sl_fig_tfa_per1m.rds")
+fig_combined_per1m    <- load_sl("sl_fig_combined_per1m.rds")
+
 # ---- PNG paths for pre-rendered figures -------------------------------------
 png_htn_program   <- paste0(wd_outp, "assessment_policy_htn_program.png")
 png_enrollment    <- paste0(wd_outp, "assessment_enrollment_trend.png")
@@ -207,6 +214,36 @@ kable(ds, align = "lll", escape = FALSE, booktabs = TRUE, format = "latex",
   column_spec(2, width = "6.5cm") |>
   column_spec(3, width = "3.5cm")
 ```
+
+## Countries with TFA Elimination Policies: Year Established
+
+```{r tfa-policy-timeline}
+if (!is.null(tbl_tfa_countries)) {
+  kable(tbl_tfa_countries, format = "latex", booktabs = TRUE,
+        col.names = c("Country", "Year Established", "Year in Effect")) |>
+    kable_styling(latex_options = c("striped", "hold_position"),
+                  font_size = 8, full_width = TRUE)
+} else {
+  cat("\\textit{PLACEHOLDER: TFA policy timeline not yet available. Knit report.Rmd to generate.}")
+}
+```
+
+\note{This table shows `r if (!is.null(tbl_tfa_countries)) nrow(tbl_tfa_countries) else "N"` countries with enacted TFA elimination policies. Note any regional clustering --- many early adopters are in the Americas and Europe, with more recent policy adoption in South-East Asia.}
+
+## Observed and Projected Hypertension Control Rates by Country
+
+```{r fig-htn-control-rates, fig.height=3.4}
+if (!is.null(fig_htn_control_rates)) {
+  print(fig_htn_control_rates)
+} else if (file.exists(png_htn_program)) {
+  knitr::include_graphics(png_htn_program)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: HTN control rates\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+\note{The "program control rate" is the proportion of enrolled hypertensive patients whose blood pressure is controlled (typically <140/90 mmHg). Observed values (dots) come from the HTN Global Tracker (2017--2024). The projection assumption is conservative: each country's 2024 observed rate is held constant to 2050 (dashed lines), with no further improvement assumed.}
 
 <!-- ======================================================================
      5. ESTIMAND, CAUSAL FRAMEWORK & COUNTERFACTUAL IMPUTATION
@@ -385,18 +422,70 @@ $$D_{a+1,t+1} = K_{a,t} \times CF_{a,t} \times \varepsilon_{CF}$$
 $$\varepsilon_{IR,\text{total}} = \varepsilon_{IR,\text{BP}} \times \varepsilon_{IR,\text{TFA}}, \quad \varepsilon_{CF,\text{total}} = \varepsilon_{CF,\text{BP}} \times \varepsilon_{CF,\text{TFA}}$$
 
 <!-- ======================================================================
-     8. RESULTS
+     8. RESULTS — HYPERTENSION
      ====================================================================== -->
 
 # Results
 
-## Deaths Averted by Intervention
+## Deaths Averted by Hypertension Control --- By Country
+
+```{r fig-htn-per1m, fig.height=3.6}
+if (!is.null(fig_htn_per1m)) {
+  print(fig_htn_per1m)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: HTN per-1M results\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+\footnotesize All values are deaths averted per 1 million treated population (2017--2050).
+
+<!-- ======================================================================
+     8b. RESULTS — TFA
+     ====================================================================== -->
+
+## Deaths Averted by TFA Elimination --- By Country
+
+```{r fig-tfa-per1m, fig.height=3.6}
+if (!is.null(fig_tfa_per1m)) {
+  print(fig_tfa_per1m)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: TFA per-1M results\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+\footnotesize All values are deaths averted per 1 million population (2017--2050).
+
+<!-- ======================================================================
+     8c. RESULTS — COMBINED PER CAPITA
+     ====================================================================== -->
+
+## Combined Impact: Deaths Averted per 1 Million People
+
+```{r fig-combined-per1m, fig.height=3.6}
+if (!is.null(fig_combined_per1m)) {
+  print(fig_combined_per1m)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Combined per-1M results\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+\begin{alertblock}{Why Per-Capita Only}
+Totals are not shown. Hypertension and TFA interventions have different target populations; per-capita rates enable valid comparison.
+\end{alertblock}
+
+<!-- ======================================================================
+     8d. EXISTING RESULT DETAIL SLIDES (retained)
+     ====================================================================== -->
+
+## Deaths Averted by Intervention (All Scenarios)
 
 ```{r fig-deaths-intervention, out.width="95%"}
 if (file.exists(png_deaths_int)) {
   knitr::include_graphics(png_deaths_int)
 } else {
-  # PLACEHOLDER: Insert cumulative deaths averted bar chart by intervention
   plot.new()
   text(0.5, 0.5, "PLACEHOLDER: Deaths averted by intervention\n(knit report.Rmd to generate)", cex = 1.2)
 }
@@ -408,7 +497,6 @@ if (file.exists(png_deaths_int)) {
 if (file.exists(png_deaths_cause)) {
   knitr::include_graphics(png_deaths_cause)
 } else {
-  # PLACEHOLDER: Insert deaths averted broken down by CVD cause
   plot.new()
   text(0.5, 0.5, "PLACEHOLDER: Deaths averted by cause\n(knit report.Rmd to generate)", cex = 1.2)
 }
@@ -420,7 +508,6 @@ if (file.exists(png_deaths_cause)) {
 if (file.exists(png_annual)) {
   knitr::include_graphics(png_annual)
 } else {
-  # PLACEHOLDER: Insert annual deaths averted time series
   plot.new()
   text(0.5, 0.5, "PLACEHOLDER: Annual deaths averted\n(knit report.Rmd to generate)", cex = 1.2)
 }
@@ -432,7 +519,6 @@ if (file.exists(png_annual)) {
 if (file.exists(png_cum_averted)) {
   knitr::include_graphics(png_cum_averted)
 } else {
-  # PLACEHOLDER: Insert cumulative deaths averted time series
   plot.new()
   text(0.5, 0.5, "PLACEHOLDER: Cumulative deaths averted\n(knit report.Rmd to generate)", cex = 1.2)
 }
@@ -444,7 +530,6 @@ if (file.exists(png_cum_averted)) {
 if (file.exists(png_top_countries)) {
   knitr::include_graphics(png_top_countries)
 } else {
-  # PLACEHOLDER: Insert top countries by deaths averted
   plot.new()
   text(0.5, 0.5, "PLACEHOLDER: Top countries\n(knit report.Rmd to generate)", cex = 1.2)
 }
@@ -456,7 +541,6 @@ if (file.exists(png_top_countries)) {
 if (file.exists(png_map)) {
   knitr::include_graphics(png_map)
 } else {
-  # PLACEHOLDER: Insert world map of deaths averted by country
   plot.new()
   text(0.5, 0.5, "PLACEHOLDER: Geographic map\n(knit report.Rmd to generate)", cex = 1.2)
 }
