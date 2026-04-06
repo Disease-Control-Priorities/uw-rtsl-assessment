@@ -1824,7 +1824,7 @@ if (!is.null(htn_scenarios)) {
     ) +
     scale_x_continuous(breaks = seq(2017, 2050, 5),
                        limits = c(2017, 2054), expand = c(0, 0)) +
-    scale_y_continuous(limits = c(0, 60), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(0, 100), expand = c(0, 0)) +
     labs(
       title = "Observed and Projected Hypertension Program Control Rates",
       x = "Year", y = "Control Rate (%)",
