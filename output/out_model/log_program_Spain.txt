@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Spain 
+Time: 2026-04-06 19:28:21.585737 
+==============================
+WARNING: No program-rate data for Spain — skipping.
+No program-impact results for Spain 

@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Bulgaria 
+Time: 2026-04-06 19:28:19.959501 
+==============================
+WARNING: No program-rate data for Bulgaria — skipping.
+No program-impact results for Bulgaria 

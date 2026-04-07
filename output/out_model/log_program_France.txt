@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): France 
+Time: 2026-04-06 19:28:21.405226 
+==============================
+WARNING: No program-rate data for France — skipping.
+No program-impact results for France 

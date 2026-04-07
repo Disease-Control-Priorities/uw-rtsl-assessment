@@ -2409,8 +2409,16 @@ registerDoParallel(cl)
 # data in dt_htn_control_scenarios.  It produces Program vs BAU-upper.
 # The target-based loop above is UNAFFECTED.
 
-# Countries with program-rate data
-locs_program <- intersect(locs, unique(dt_htn_control_scenarios$location))
+# Countries with HTN program-rate data OR TFA policy
+#locs_program <- intersect(locs, unique(dt_htn_control_scenarios$location))
+
+locs_program <- unique(dt_htn_control_scenarios$location)
+
+locs_tfa <- unique(dt_tfa_scenarios$location)
+
+# concatenate and deduplicate
+locs_program <- unique(c(locs_program, locs_tfa))
+
 
 if (length(locs_program) > 0) {
 

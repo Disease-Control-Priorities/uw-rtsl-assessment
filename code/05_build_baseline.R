@@ -397,6 +397,92 @@ rm("adjustments","bgmx_fcst","dt_pop_unwpp","wpp.adj","rep","pop20")
 # HTN Program Enrolled Population----
 #...........................................................
 
+# We are going to hamronize age-sex distribution of the population enrolled in HTN control programs
+# for selected countries and years based on the HTN global tracker data. This will allow us to apply 
+# the control rates from the HTN program dataset to the population enrolled in HTN control programs 
+# to estimate the number of people with BP controlled through these programs
+#by location and year instead of the UNWPP country wide population. 
+# This will allow us to estimate the impact of HTN control programs on CVD outcomes in our model.
+
+
+# Countries: Bangladesh, India, China, Ethiopia, Sri Lanka
+
+# Read excel sheet xlsx
+dt_pop_distr <- readxl::read_excel(paste0(wd_raw,"location-age-sex-distribution.xlsx"), sheet = "Sheet1") %>%
+  as.data.table() 
+
+# Reshape long sex and age distribution
+dt_pop_distr <- melt(dt_pop_distr, id.vars = c("location","age_category"),
+                     direction = "long", variable.name = "sex")
+
+# Interpolation linear within groups
+# If you do not want a flat split inside each band, you can smooth between group
+# midpoints and then rescale to preserve each group total. 
+#That is more realistic, but also more assumptions-heavy. 
+
+interpolate_single_age <- function(dt,
+                                   min_age_open = 20,
+                                   max_age_open = 99,
+                                   integer_output = FALSE) {
+  dt <- copy(as.data.table(dt))
+  
+  parse_age_bounds <- function(x, min_age_open = 20, max_age_open = 99) {
+    lower <- upper <- rep(NA_integer_, length(x))
+    
+    idx1 <- grepl("^<=", x)
+    upper[idx1] <- as.integer(sub("^<=", "", x[idx1]))
+    lower[idx1] <- min_age_open
+    
+    idx2 <- grepl("^>=", x)
+    lower[idx2] <- as.integer(sub("^>=", "", x[idx2]))
+    upper[idx2] <- max_age_open
+    
+    idx3 <- grepl("^[0-9]+-[0-9]+$", x)
+    lower[idx3] <- as.integer(sub("-.*", "", x[idx3]))
+    upper[idx3] <- as.integer(sub(".*-", "", x[idx3]))
+    
+    data.table(age_category = x, age_lower = lower, age_upper = upper)
+  }
+  
+  bounds <- unique(parse_age_bounds(unique(dt$age_category), min_age_open, max_age_open))
+  dt <- merge(dt, bounds, by = "age_category", all.x = TRUE)
+  
+  if (dt[is.na(age_lower) | is.na(age_upper), .N] > 0) {
+    stop("Some age groups could not be parsed.")
+  }
+  
+  out <- dt[
+    , {
+      ages <- age_lower:age_upper
+      nages <- length(ages)
+      
+      if (!integer_output) {
+        vals <- rep(value / nages, nages)
+      } else {
+        base_vals <- floor(value / nages)
+        remainder <- value - sum(base_vals)
+        vals <- rep(base_vals, nages)
+        if (remainder > 0) vals[1:remainder] <- vals[1:remainder] + 1L
+      }
+      
+      .(age = ages, value = vals)
+    },
+    by = .(location, sex, age_category)
+  ]
+  
+  setorder(out, location, sex, age)
+  out[]
+}
+
+dt_pop_distr <- interpolate_single_age(dt_pop_distr, min_age_open = 20, max_age_open = 95, integer_output = FALSE)
+
+# Compute observed proportion of population in each location, sex single age year
+dt_pop_distr[, observed_proportion := value / sum(value), by = .(location)]
+
+# remove unnecessary columns
+dt_pop_distr[, c("age_category", "value") := NULL]
+
+
 # We need to recompute the population enrolled in HTN control programs by location and year based
 # on the HTN global tracker data, which provides cumulative enrollment
 # and the UNWPP population data, which provides total population by location, year and age and sex distribution 
@@ -426,10 +512,19 @@ dt_htn_enrollment <- merge(dt_htn_control_scenarios, dt_population_distribution,
                          by = c("location", "year"), all.y = TRUE)
 
 # If year <2017 the enrollment is 1
-dt_htn_enrollment[year<2017, enrolled := 1]
+dt_htn_enrollment[year<2017 | !(location %in% unique(dt_htn_control_scenarios$location)), enrolled := 1]
+
+# Merge with observed population distribution to get population proportion by location, year, age
+dt_htn_enrollment <- merge(dt_htn_enrollment, dt_pop_distr, 
+                           by = c("location", "sex","age"), all.x = TRUE)
+
+# For any location-year where we do not have observed population distribution,
+# we will assume the population proportion is the same as the overall population distribution for that location-year. 
+
+dt_htn_enrollment[is.na(observed_proportion), observed_proportion := population_proportion]
 
 # Compute columns Nx_program and pop_program by multiplying enrollment by population proportion
-dt_htn_enrollment[, Nx_program := enrolled * population_proportion]
+dt_htn_enrollment[, Nx_program := enrolled * observed_proportion]
 dt_htn_enrollment[, pop_program := Nx_program]
 
 # # Sanity check: sum of pop_program by location and year should equal enrollment
@@ -457,13 +552,52 @@ dt_htn_enrollment <- dt_htn_enrollment[, .(location, year, age, sex, Nx_program,
 
 saveRDS(dt_htn_enrollment, file = paste0(wd_data,"dt_htn_enrollment.rds"))
 
+# We are going to include countries with TFA bans in the HTN program dataset as well, 
+# since they also have a population with reduced CVD risk due to TFA bans from RTSL.
+
+dt_tfa_scenarios <- readRDS(file = paste0(wd_data,"tfa_policy_scenarios_assessment.rds"))
+
+# dt_population_tfa <- dt_population_distribution[
+#   location %in% c(
+#     unique(dt_tfa_scenarios$location),
+#     unique(dt_htn_control_scenarios$location)
+#   )
+# ]
+
+dt_population_tfa <- copy(dt_population_distribution)
+  
+dt_population_tfa[, Nx_program := population]
+dt_population_tfa[, pop_program := Nx_program]
+
+dt_population_tfa[,
+                  norm_factor := 1e6 / sum(Nx_program, na.rm = TRUE),
+                  by = .(location, year)
+]
+dt_population_tfa[, Nx_program  := Nx_program  * norm_factor]
+dt_population_tfa[, pop_program := pop_program * norm_factor]
+dt_population_tfa[, norm_factor := NULL]
+
+# Keep only relevant variables and merge back to b_rates
+dt_population_tfa <- dt_population_tfa[, .(location, year, age, sex, Nx_program,pop_program)]
+
+#rename population tfa
+setnames(dt_population_tfa, c("Nx_program", "pop_program"), c("Nx_program_tfa", "pop_program_tfa"))
+
+dt_population_tfa_lei <- dt_population_tfa[location == "Luxembourg",]
+
+dt_population_tfa_lei[, location := "Liechtenstein"]
+
+dt_population_tfa <- rbind(dt_population_tfa, dt_population_tfa_lei, fill = TRUE)
+
 b_rates <- merge(b_rates, dt_htn_enrollment, by = c("location", "year", "age", "sex"), all.x = TRUE)
 
-# Assign 1 to Nx_program and pop_program for non-program countries and years <2017
-b_rates[is.na(Nx_program), Nx_program := 1]
-b_rates[is.na(pop_program), pop_program := 1]
-b_rates[year<2017, Nx_program := 1]
-b_rates[year<2017, pop_program := 1]
+b_rates <- merge(b_rates, dt_population_tfa, by = c("location", "year", "age", "sex"), all.x = TRUE)
+
+# # Assign 1 to Nx_program and pop_program for non-program countries and years <2017
+# b_rates[is.na(Nx_program), Nx_program := 1]
+# b_rates[is.na(pop_program), pop_program := 1]
+# b_rates[year<2017, Nx_program := 1]
+# b_rates[year<2017, pop_program := 1]
 
 # Clean up environment
-rm("dt_population_distribution", "dt_htn_control_scenarios")
+rm("dt_population_distribution", "dt_htn_control_scenarios", "dt_pop_distr", "dt_htn_enrollment", "dt_population_tfa", "dt_population_tfa_lei","dt_tfa_scenarios")

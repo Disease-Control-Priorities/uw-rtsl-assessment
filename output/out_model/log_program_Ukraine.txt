@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Ukraine 
+Time: 2026-04-06 19:28:21.602377 
+==============================
+WARNING: No program-rate data for Ukraine — skipping.
+No program-impact results for Ukraine 

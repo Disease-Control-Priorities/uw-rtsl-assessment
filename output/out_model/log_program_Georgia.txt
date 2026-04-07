@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Georgia 
+Time: 2026-04-06 19:28:21.411226 
+==============================
+WARNING: No program-rate data for Georgia — skipping.
+No program-impact results for Georgia 

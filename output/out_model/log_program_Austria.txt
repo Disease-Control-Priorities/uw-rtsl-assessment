@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Austria 
+Time: 2026-04-06 19:28:19.944252 
+==============================
+WARNING: No program-rate data for Austria — skipping.
+No program-impact results for Austria 

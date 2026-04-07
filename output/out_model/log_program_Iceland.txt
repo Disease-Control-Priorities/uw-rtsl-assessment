@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Iceland 
+Time: 2026-04-06 19:28:21.440443 
+==============================
+WARNING: No program-rate data for Iceland — skipping.
+No program-impact results for Iceland 

@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Germany 
+Time: 2026-04-06 19:28:21.422709 
+==============================
+WARNING: No program-rate data for Germany — skipping.
+No program-impact results for Germany 

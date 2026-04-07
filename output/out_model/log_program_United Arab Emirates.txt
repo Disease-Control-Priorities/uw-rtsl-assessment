@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): United Arab Emirates 
+Time: 2026-04-06 19:28:21.607632 
+==============================
+WARNING: No program-rate data for United Arab Emirates — skipping.
+No program-impact results for United Arab Emirates 

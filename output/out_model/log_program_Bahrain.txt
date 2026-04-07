@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Bahrain 
+Time: 2026-04-06 19:28:19.948959 
+==============================
+WARNING: No program-rate data for Bahrain — skipping.
+No program-impact results for Bahrain 

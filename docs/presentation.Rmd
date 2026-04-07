@@ -332,7 +332,7 @@ The \textbf{program-attributable deaths averted}: the difference in cumulative C
 \medskip
 
 \begin{uncertaintyblock}{Counterfactual Assumption}
-The counterfactual assumes that without RTSL, HTN control rates would have remained at pre-program levels (zero incremental effect). This is a conservative upper-bound estimate of program impact.
+The counterfactual assumes that without RTSL, HTN control would be 0\% in the objective group and TFA intake  rates would have remained at pre-program levels (zero incremental effect). This is an upper-bound estimate of program impact.
 \end{uncertaintyblock}
 
 <!-- ======================================================================

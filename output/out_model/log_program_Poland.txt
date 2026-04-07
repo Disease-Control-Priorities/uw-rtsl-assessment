@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Poland 
+Time: 2026-04-06 19:28:21.537736 
+==============================
+WARNING: No program-rate data for Poland — skipping.
+No program-impact results for Poland 

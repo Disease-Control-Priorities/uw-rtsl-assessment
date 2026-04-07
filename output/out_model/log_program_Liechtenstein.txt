@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Liechtenstein 
+Time: 2026-04-06 19:28:21.472922 
+==============================
+WARNING: No program-rate data for Liechtenstein — skipping.
+No program-impact results for Liechtenstein 

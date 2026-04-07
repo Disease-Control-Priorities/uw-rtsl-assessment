@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Kuwait 
+Time: 2026-04-06 19:28:21.457976 
+==============================
+WARNING: No program-rate data for Kuwait — skipping.
+No program-impact results for Kuwait 

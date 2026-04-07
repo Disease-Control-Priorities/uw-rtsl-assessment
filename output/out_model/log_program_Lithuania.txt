@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Lithuania 
+Time: 2026-04-06 19:28:21.478252 
+==============================
+WARNING: No program-rate data for Lithuania — skipping.
+No program-impact results for Lithuania 

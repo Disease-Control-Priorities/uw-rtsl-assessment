@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Sweden 
+Time: 2026-04-06 19:28:21.591324 
+==============================
+WARNING: No program-rate data for Sweden — skipping.
+No program-impact results for Sweden 

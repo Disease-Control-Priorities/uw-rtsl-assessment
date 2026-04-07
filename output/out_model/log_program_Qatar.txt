@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Qatar 
+Time: 2026-04-06 19:28:21.548124 
+==============================
+WARNING: No program-rate data for Qatar — skipping.
+No program-impact results for Qatar 

@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Luxembourg 
+Time: 2026-04-06 19:28:21.483492 
+==============================
+WARNING: No program-rate data for Luxembourg — skipping.
+No program-impact results for Luxembourg 

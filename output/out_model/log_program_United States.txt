@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): United States 
+Time: 2026-04-06 19:28:21.617423 
+==============================
+WARNING: No program-rate data for United States — skipping.
+No program-impact results for United States 

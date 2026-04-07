@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Latvia 
+Time: 2026-04-06 19:28:21.462895 
+==============================
+WARNING: No program-rate data for Latvia — skipping.
+No program-impact results for Latvia 

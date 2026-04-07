@@ -362,16 +362,51 @@ dt_tfa_scenarios <- readRDS(file = paste0(wd_data,"tfa_policy_scenarios.rds"))
 dt_tfa_bpp <- as.data.table(read_excel(paste0(wd_raw,"List of Countries with Policies Passed-updated March 2026.xlsx"), 
                                        sheet = "Sheet1", range = "A3:D56")) 
 
+dt_tfa_bpp[, tfa_rtsl_include := "Yes"]
+
+## Add countries for complete list including not involved in RTSL calculations
+
+dt_tfa_bpp_nortsl <- as.data.table(read_excel(paste0(wd_raw,"List of Countries with Policies Passed-updated March 2026.xlsx"), 
+                                       sheet = "Sheet1", range = "E3:G18")) 
+
+# Create dummy before replace (not RTSL)
+dt_tfa_bpp_nortsl[, tfa_rtsl_include := "No"]
+
+# Rbind both files and keep unique locations
+
+dt_tfa_bpp <- rbind(dt_tfa_bpp,dt_tfa_bpp_nortsl,fill = TRUE)
+
+# Remove missing location
+dt_tfa_bpp <- dt_tfa_bpp[!is.na(Country),]
+
 # rename locations to match gbd locations (the baseline)
 name_map <- c(
   "Czech Republic"                    = "Czechia",
   "Macedonia"                         = "North Macedonia",
   "Moldova"                           = "Republic of Moldova",
-  "Cyprus"                            = "Republic of Cyprus")
+  "Republic of Cyprus"                = "Cyprus")
 
 dt_tfa_bpp[, Country := fcoalesce(name_map[Country], Country)]
 
+# Vector of N=67 locs of interest
+
+locs_tfa <- unique(dt_tfa_bpp$Country)
+
+# Check all dt_tfa_bpp location included in scenarios
+
+check_locs <- setdiff(dt_tfa_bpp$Country, dt_tfa_scenarios$location)
+
 #? Leichtein has no tfa data but policy
+# So replicate Luxembourg policy data for Liechtenstein 
+# since they are similar in many ways and Liechtenstein has no TFA data
+# This wont be included in ccalculations, but in totalizing countries with policy
+
+dt_tfa_scenarios_lei <- dt_tfa_scenarios[location == "Luxembourg",]
+
+dt_tfa_scenarios_lei[, location := "Liechtenstein"]
+
+dt_tfa_scenarios <- rbind(dt_tfa_scenarios, dt_tfa_scenarios_lei, fill = TRUE)
+
 dt_tfa_scenarios <- merge(dt_tfa_scenarios, dt_tfa_bpp, by.x = "location", by.y= "Country", all.x = TRUE,all.y = F)
 
 setnames(dt_tfa_scenarios, c("Date passed", "Date in Effect","RTSL Direct engagement"),
@@ -381,10 +416,11 @@ setnames(dt_tfa_scenarios, c("Date passed", "Date in Effect","RTSL Direct engage
 dt_tfa_scenarios[, tfa_rtsl_engagement := ifelse(is.na(tfa_rtsl_engagement), "No", "Yes")]
 
 # subset from year 2016 for counterfactual   
-dt_tfa_scenarios <- dt_tfa_scenarios[year>=2016,]
+#dt_tfa_scenarios <- dt_tfa_scenarios[year>=2016,]
 
 # subset countries of interest TFA bp passed 2016-2024
-dt_tfa_scenarios_counterfactual <- dt_tfa_scenarios[!is.na(tfa_bpp_date_passed) & year >= 2016 & year <= 2024 & tfa_current>0,]
+#dt_tfa_scenarios_counterfactual <- dt_tfa_scenarios[!is.na(tfa_bpp_date_passed) & year >= 2016 & year <= 2024 & tfa_current>0,]
+dt_tfa_scenarios_counterfactual <- dt_tfa_scenarios[!is.na(tfa_bpp_date_passed) & year <= 2024 & tfa_current>0,]
 
 # order most recent non zero observation by location and year
 dt_tfa_scenarios_counterfactual <- dt_tfa_scenarios_counterfactual[order(location, year, decreasing = TRUE),]
@@ -419,11 +455,16 @@ dt_tfa_scenarios[!is.na(tfa_bpp_date_passed) & year>=tfa_bpp_date_in_effect, tfa
 # 3) Viet Nam no RTSL engagement and not passed
 # 4) Thailand no RTSL engagement and passed
 
+## Keep only countries of interest N= 67
+
+dt_tfa_scenarios <- dt_tfa_scenarios[location %in% locs_tfa,]
+
 # Save the data
 saveRDS(dt_tfa_scenarios, file = paste0(wd_data,"tfa_policy_scenarios_assessment.rds"))
 
 # cleaning: remove objects that are no longer needed
-rm(dt_tfa_scenarios, dt_tfa_bpp, dt_tfa_scenarios_counterfactual)
+rm(dt_tfa_scenarios, dt_tfa_bpp, dt_tfa_scenarios_counterfactual,
+   dt_tfa_scenarios_lei, check_locs, locs_tfa,dt_tfa_bpp_nortsl)
 
 
 # #DT AI not included

@@ -1,0 +1,44 @@
+Refactor this R Markdown reporting pipeline for a new but related RTSL cardiovascular project.
+
+Project objective:
+Estimate the expected health impact of RTSL cardiovascular health programs from 2017–2024 in the targeted populations, projected to 2050.
+
+Relevant interventions only:
+- improved hypertension control
+- industrial trans fat elimination
+
+Key files:
+- `06_run_scenarios_assessment.r` = model script producing assessment outputs
+- report R Markdown in the `scenarios` folder
+
+What to do:
+1. Read `06_run_scenarios_assessment.r` and the report Rmd.
+2. Identify all places where the report still reflects the old project’s interventions, scenarios, objectives, or narrative.
+3. Refactor the report so it matches the current project and current scenario outputs.
+4. Clearly characterize:
+   - countries included
+   - scenarios included
+   - intervention definitions
+   - projection horizon to 2050
+5. Preserve current figures, tables, and Excel export structure as much as possible, but feel free to add (be creative)
+6. Add/update sections, captions, and explanatory text as needed, but avoid unnecessary rewrites.
+7. Flag any legacy outputs that are no longer valid and propose the smallest compatible fix.
+
+Outputs:
+- brief audit of legacy/misaligned elements
+- refactor plan
+- revised R Markdown
+- any supporting code edits needed
+- assumptions made
+- post-render verification checklist
+
+Implementation principles:
+- minimal disruption
+- maintain downstream compatibility
+- clean, modular code
+- update narrative to match the new intervention set and objectives
+- do not change the export structure unless absolutely necessary
+
+#####################################################################################
+#%###################################################################################
+

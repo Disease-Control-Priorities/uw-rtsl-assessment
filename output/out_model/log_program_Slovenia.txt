@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Slovenia 
+Time: 2026-04-06 19:28:21.576457 
+==============================
+WARNING: No program-rate data for Slovenia — skipping.
+No program-impact results for Slovenia 

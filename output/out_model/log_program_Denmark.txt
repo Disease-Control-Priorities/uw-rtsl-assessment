@@ -1,0 +1,7 @@
+
+==============================
+Country (program-impact): Denmark 
+Time: 2026-04-06 19:28:19.986288 
+==============================
+WARNING: No program-rate data for Denmark — skipping.
+No program-impact results for Denmark 
