@@ -1,7 +1,266 @@
 
 ==============================
 Country (program-impact): Saudi Arabia 
-Time: 2026-04-06 19:28:21.562432 
+Time: 2026-04-07 16:51:33.458043 
 ==============================
-WARNING: No program-rate data for Saudi Arabia — skipping.
-No program-impact results for Saudi Arabia 
+
+=== Program run: Saudi Arabia ===
+
+##########################################
+RUNNING SCENARIO: baseline 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Saudi Arabia 
+Interventions:  
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Saudi Arabia 
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: baseline 
+
+
+##########################################
+RUNNING SCENARIO: bp_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Saudi Arabia 
+Interventions: antihypertensive 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Saudi Arabia 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP 
+
+
+##########################################
+RUNNING SCENARIO: tfa_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Saudi Arabia 
+Interventions: tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Saudi Arabia 
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: TFA 
+
+
+##########################################
+RUNNING SCENARIO: bp_tfa 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Saudi Arabia 
+Interventions: antihypertensive, tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Saudi Arabia 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP + TFA 
+
+
+=== BAU-upper run: Saudi Arabia ===
+
+##########################################
+RUNNING SCENARIO: baseline 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Saudi Arabia 
+Interventions:  
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Saudi Arabia 
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: baseline 
+
+
+##########################################
+RUNNING SCENARIO: bp_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Saudi Arabia 
+Interventions: antihypertensive 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Saudi Arabia 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP 
+
+
+##########################################
+RUNNING SCENARIO: tfa_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Saudi Arabia 
+Interventions: tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Saudi Arabia 
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: TFA 
+
+
+##########################################
+RUNNING SCENARIO: bp_tfa 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Saudi Arabia 
+Interventions: antihypertensive, tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Saudi Arabia 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP + TFA 
+
+Saved: C:/Users/wrgar/OneDrive - UW/02Work/ResolveToSaveLives/Assessment/uw-rtsl-assessment/output//out_model/model_output_Saudi Arabia_program_impact.rds 

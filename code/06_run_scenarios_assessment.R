@@ -2417,8 +2417,23 @@ locs_program <- unique(dt_htn_control_scenarios$location)
 locs_tfa <- unique(dt_tfa_scenarios$location)
 
 # concatenate and deduplicate
-locs_program <- unique(c(locs_program, locs_tfa))
+locs_program <- unique(c(locs_tfa,locs_program))
 
+
+# for countries in TFA but not in HTN program data, we can still run the TFA-only scenario using program rates for HTN 
+# (which will be the same as BAU-upper since no HTN effect is applied)
+
+dt_htn_control_scenarios_tfa <- dt_tfa_scenarios[!location %in% unique(dt_htn_control_scenarios$location)]
+
+# Assign 0 to control rates for these TFA-only countries (since they won't affect the TFA scenario results, but this allows them to be included in the program-impact framework)
+dt_htn_control_scenarios_tfa[, `:=`(
+  control_rate_program = 0,
+  control_rate_bau_upper = 0)] 
+
+dt_htn_control_scenarios_tfa <- dt_htn_control_scenarios_tfa[year>=2017, .(location, year, control_rate_program, control_rate_bau_upper)]
+
+# rbind htn scenarios
+dt_htn_control_scenarios <- rbindlist(list(dt_htn_control_scenarios, dt_htn_control_scenarios_tfa), fill = TRUE)
 
 if (length(locs_program) > 0) {
 

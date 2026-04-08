@@ -1,7 +1,266 @@
 
 ==============================
 Country (program-impact): Portugal 
-Time: 2026-04-06 19:28:21.542638 
+Time: 2026-04-07 16:51:08.632101 
 ==============================
-WARNING: No program-rate data for Portugal — skipping.
-No program-impact results for Portugal 
+
+=== Program run: Portugal ===
+
+##########################################
+RUNNING SCENARIO: baseline 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Portugal 
+Interventions:  
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Portugal 
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: baseline 
+
+
+##########################################
+RUNNING SCENARIO: bp_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Portugal 
+Interventions: antihypertensive 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Portugal 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP 
+
+
+##########################################
+RUNNING SCENARIO: tfa_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Portugal 
+Interventions: tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Portugal 
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: TFA 
+
+
+##########################################
+RUNNING SCENARIO: bp_tfa 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Portugal 
+Interventions: antihypertensive, tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Portugal 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP + TFA 
+
+
+=== BAU-upper run: Portugal ===
+
+##########################################
+RUNNING SCENARIO: baseline 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Portugal 
+Interventions:  
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Portugal 
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: baseline 
+
+
+##########################################
+RUNNING SCENARIO: bp_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Portugal 
+Interventions: antihypertensive 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Portugal 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP 
+
+
+##########################################
+RUNNING SCENARIO: tfa_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Portugal 
+Interventions: tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Portugal 
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: TFA 
+
+
+##########################################
+RUNNING SCENARIO: bp_tfa 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Portugal 
+Interventions: antihypertensive, tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Portugal 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP + TFA 
+
+Saved: C:/Users/wrgar/OneDrive - UW/02Work/ResolveToSaveLives/Assessment/uw-rtsl-assessment/output//out_model/model_output_Portugal_program_impact.rds 

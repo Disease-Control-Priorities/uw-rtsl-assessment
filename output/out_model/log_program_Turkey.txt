@@ -1,7 +1,266 @@
 
 ==============================
 Country (program-impact): Turkey 
-Time: 2026-04-06 19:28:21.597199 
+Time: 2026-04-07 16:52:34.150753 
 ==============================
-WARNING: No program-rate data for Turkey — skipping.
-No program-impact results for Turkey 
+
+=== Program run: Turkey ===
+
+##########################################
+RUNNING SCENARIO: baseline 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Turkey 
+Interventions:  
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Turkey 
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: baseline 
+
+
+##########################################
+RUNNING SCENARIO: bp_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Turkey 
+Interventions: antihypertensive 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Turkey 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP 
+
+
+##########################################
+RUNNING SCENARIO: tfa_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Turkey 
+Interventions: tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Turkey 
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: TFA 
+
+
+##########################################
+RUNNING SCENARIO: bp_tfa 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Turkey 
+Interventions: antihypertensive, tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Turkey 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP + TFA 
+
+
+=== BAU-upper run: Turkey ===
+
+##########################################
+RUNNING SCENARIO: baseline 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Turkey 
+Interventions:  
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Turkey 
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: baseline 
+
+
+##########################################
+RUNNING SCENARIO: bp_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Turkey 
+Interventions: antihypertensive 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Turkey 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP 
+
+
+##########################################
+RUNNING SCENARIO: tfa_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Turkey 
+Interventions: tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Turkey 
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: TFA 
+
+
+##########################################
+RUNNING SCENARIO: bp_tfa 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Turkey 
+Interventions: antihypertensive, tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Turkey 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP + TFA 
+
+Saved: C:/Users/wrgar/OneDrive - UW/02Work/ResolveToSaveLives/Assessment/uw-rtsl-assessment/output//out_model/model_output_Turkey_program_impact.rds 

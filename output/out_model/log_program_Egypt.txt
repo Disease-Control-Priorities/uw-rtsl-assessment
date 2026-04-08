@@ -1,7 +1,266 @@
 
 ==============================
 Country (program-impact): Egypt 
-Time: 2026-04-06 19:28:21.391498 
+Time: 2026-04-07 16:48:20.622845 
 ==============================
-WARNING: No program-rate data for Egypt — skipping.
-No program-impact results for Egypt 
+
+=== Program run: Egypt ===
+
+##########################################
+RUNNING SCENARIO: baseline 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Egypt 
+Interventions:  
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Egypt 
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: baseline 
+
+
+##########################################
+RUNNING SCENARIO: bp_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Egypt 
+Interventions: antihypertensive 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Egypt 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP 
+
+
+##########################################
+RUNNING SCENARIO: tfa_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Egypt 
+Interventions: tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Egypt 
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: TFA 
+
+
+##########################################
+RUNNING SCENARIO: bp_tfa 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Egypt 
+Interventions: antihypertensive, tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Egypt 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP + TFA 
+
+
+=== BAU-upper run: Egypt ===
+
+##########################################
+RUNNING SCENARIO: baseline 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Egypt 
+Interventions:  
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Egypt 
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: baseline 
+
+
+##########################################
+RUNNING SCENARIO: bp_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Egypt 
+Interventions: antihypertensive 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Egypt 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP 
+
+
+##########################################
+RUNNING SCENARIO: tfa_only 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Egypt 
+Interventions: tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Egypt 
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: TFA 
+
+
+##########################################
+RUNNING SCENARIO: bp_tfa 
+##########################################
+
+========================================
+STARTING PROJECTION FOR: Egypt 
+Interventions: antihypertensive, tfa 
+========================================
+
+  HTN target: user-defined = 0 
+  Substituting program population (Nx_program, pop_program)
+  Program population substituted for Egypt 
+
+=== Applying Antihypertensive Therapy ===
+  Mode: program-rate (exogenous control_rate_vector)
+ - Calculating antihypertensive impact using PROGRAM control-rate vector
+  - Calculating baseline incidence with GBD RRs
+  - Program control-rate vector applied successfully
+
+=== Combining BP-related intervention effects ===
+  Combined effects applied to CF and IR
+
+=== Applying TFA Intervention ===
+  - Calculating TFA impact
+
+=== Setting Initial Population States ===
+
+=== Running State Transition Model ===
+Projecting from 2017 to 2058...
+  Year 2027 
+  Year 2037 
+  Year 2047 
+  Year 2057 
+
+=== Projection Complete ===
+Final intervention label: BP + TFA 
+
+Saved: C:/Users/wrgar/OneDrive - UW/02Work/ResolveToSaveLives/Assessment/uw-rtsl-assessment/output//out_model/model_output_Egypt_program_impact.rds 
