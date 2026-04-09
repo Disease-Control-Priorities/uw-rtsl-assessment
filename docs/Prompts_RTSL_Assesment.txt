@@ -76,3 +76,65 @@ Slide 3 title: "Combined Interventions: Top 20 Countries by Deaths Averted" show
 Use fig.width=12, fig.height=6, echo=FALSE for all three plot chunks.
 
 Important: Match the exact scenario label strings used in the data when filtering. Check the actual values in the code that creates dt_excel_per1m_final.
+
+#######################################################################################
+#######################################################################################
+
+You are modifying two files: report.Rmd and presentation_donors.rmd. Do NOT modify any other files.
+
+TASK: Create two new slides with publication-quality plots.
+
+First, read both report.Rmd and presentation_donors.rmd thoroughly to understand the existing structure, how data is loaded, and what packages are already available. Also read the file tfa_policy_scenarios_assessment.rds to understand its structure, column names, and values.
+
+DATA SOURCE: tfa_policy_scenarios_assessment.rds
+Key columns to inspect:
+- Location/country identifiers
+- Date passed (when TFA ban was implemented)
+- TFA_RTSL_INCLUDE (used to discriminate in stacked bars)
+- TFA_rtsl_engagement (used for map coloring)
+- Population data if available (if not, you may need to join with population data already loaded elsewhere in report.Rmd)
+
+Also use whatever HTN program participation data is already available in report.Rmd to determine which countries have an HTN program.
+
+SLIDE 1: TFA Ban Implementation Timeline (bar + line chart with dual y-axes)
+
+Build a ggplot2 plot object (e.g., sl_fig_tfa_timeline) in report.Rmd with:
+- X-axis: calendar year
+- Stacked bars: cumulative number of countries that have implemented a TFA ban by that year, stacked/colored by the TFA_RTSL_INCLUDE column categories
+- Line (overlaid): cumulative population covered in billions
+- Dual y-axes: left axis = population covered (billions), right axis = cumulative number of countries
+- Data labels on top of bars showing the cumulative country count for each year
+- A vertical line or annotation marking 2018 labeled "WHO REPLACE Initiative"
+- Publication-quality theme: clean, minimal gridlines, professional fonts, legend positioned cleanly
+- This should look like a polished policy brief figure
+
+SLIDE 2: World Map of Country Coverage
+
+Build a ggplot2 map object (e.g., sl_fig_country_map) in report.Rmd with:
+- A world map (use rnaturalearth or map_data) highlighting countries with color categories:
+  1) "HTN Program + TFA Ban" - countries that have BOTH an HTN program AND a TFA ban
+  2) "HTN Program Only" - countries with only an HTN program
+  3) "TFA Ban Only (RTSL Engaged)" - countries with only a TFA ban WHERE TFA_rtsl_engagement indicates RTSL engagement
+- Countries not in any category should be a neutral gray
+- Use a clean, distinguishable color palette (3 distinct colors + gray for non-included)
+- Include a clear legend
+- Use a professional map projection
+- Publication-quality theme
+
+IMPLEMENTATION IN report.Rmd:
+- Add code chunks AFTER the relevant data is loaded/computed
+- Save plot objects so they can be referenced from the presentation
+- Also save them as .rds files to output/slides/ following the existing pattern in the codebase if that pattern exists
+
+IMPLEMENTATION IN presentation_donors.rmd:
+- Add two new slides referencing the plot objects:
+  - Slide 1 title: "Trans Fat Elimination: Global Policy Progress"
+    - Display sl_fig_tfa_timeline with fig.width=12, fig.height=6, echo=FALSE
+  - Slide 2 title: "Global Coverage: HTN and TFA Interventions"
+    - Display sl_fig_country_map with fig.width=12, fig.height=6, echo=FALSE
+
+IMPORTANT:
+- Match exact column name spellings from the actual data (inspect the .rds file first)
+- Check how country names are formatted in the data vs how they appear in map data, and handle any mismatches
+- If population data is not in tfa_policy_scenarios_assessment.rds, find where it is loaded in report.Rmd and join appropriately
+- Only modify report.Rmd and presentation_donors.rmd

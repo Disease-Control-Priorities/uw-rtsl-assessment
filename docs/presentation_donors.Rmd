@@ -132,6 +132,32 @@ knitr::opts_chunk$set(
   out.width  = "\\linewidth",
   dev = "cairo_pdf"
 )
+
+# Grand total from table attribute
+grand_combined_val <- if (!is.null(tbl_grand_total_lives_saved)) {
+  attr(tbl_grand_total_lives_saved, "grand_combined")
+} else {
+  NA_real_
+}
+
+grand_combined_fmt <- if (!is.na(grand_combined_val)) {
+  formatC(round(grand_combined_val), format = "d", big.mark = ",")
+} else {
+  "N/A"
+}
+
+grand_combined_m <- if (!is.na(grand_combined_val)) {
+  fmt_M(grand_combined_val)
+} else {
+  "12"
+}
+
+grand_daily_fmt <- if (!is.na(grand_combined_val)) {
+  formatC(round(grand_combined_val / (33 * 365)), format = "d", big.mark = ",")
+} else {
+  "1,000"
+}
+
 ```
 
 <!-- ======================================================================
@@ -142,20 +168,20 @@ knitr::opts_chunk$set(
      2. OPENING IMPACT SLIDE
      ====================================================================== -->
 
-## `r if (!is.na(total_combined)) fmt_M(total_combined) else "12"` Million Lives Saved
+## `r grand_combined_m` Million Lives Saved
 
 \justifying
 
-Across `r n_countries` countries, RTSL cardiovascular health programs are projected to save `r if (!is.na(total_combined)) fmt_M(total_combined) else "12"` million lives by 2050.
+Across `r n_countries` countries, RTSL cardiovascular health programs are projected to avert `r grand_combined_m` million deaths from 2017--2050 across hypertension control and trans-fat elimination interventions.
 
 \medskip
 
-That is approximately **`r if (!is.na(total_combined)) formatC(round(total_combined / (33 * 365)), format = "d", big.mark = ",") else "1,000"` deaths averted every day** for over three decades --- the equivalent of preventing a major disaster, quietly, every single day.
+That is approximately **`r grand_daily_fmt` deaths averted every day** over more than three decades.
 
 \medskip
 
 \begin{exampleblock}{What This Means}
-Sustained investment in hypertension control and trans-fat elimination is delivering one of the largest projected mortality reductions in global cardiovascular health.
+Sustained investment in hypertension control and trans-fat elimination could deliver one of the largest projected reductions in cardiovascular mortality across RTSL-engaged countries.
 \end{exampleblock}
 
 <!-- ======================================================================
@@ -232,42 +258,42 @@ if (!is.null(fig_global_cumulative)) {
 `r if (exists("global_htn") & exists("global_tfa")) scales::comma(global_htn + global_tfa) else "N/A"` deaths averted globally.
 \end{exampleblock}
 
-## Top Contributing Countries
+<!-- ======================================================================
+     PARETO CHARTS: TOP 20 COUNTRIES
+     ====================================================================== -->
 
-```{r fig-top-countries, out.width="95%"}
-if (file.exists(png_top_countries)) {
-  knitr::include_graphics(png_top_countries)
+## Hypertension Control: Top 20 Countries by Deaths Averted
+
+```{r pareto-htn-slide, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
+if (!is.null(p_pareto_htn)) {
+  print(p_pareto_htn)
 } else {
   plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Top countries\n(knit report.Rmd to generate)", cex = 1.2)
+  text(0.5, 0.5, "PLACEHOLDER: HTN Pareto chart\n(knit report.Rmd to generate)", cex = 1.2)
 }
 ```
 
-## Geographic Distribution of Impact
+## Trans Fat Elimination: Top 20 Countries by Deaths Averted
 
-```{r fig-map, out.width="95%"}
-if (file.exists(png_map)) {
-  knitr::include_graphics(png_map)
+```{r pareto-tfa-slide, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
+if (!is.null(p_pareto_tfa)) {
+  print(p_pareto_tfa)
 } else {
   plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Geographic map\n(knit report.Rmd to generate)", cex = 1.2)
+  text(0.5, 0.5, "PLACEHOLDER: TFA Pareto chart\n(knit report.Rmd to generate)", cex = 1.2)
 }
 ```
 
-## Combined Impact: Deaths Averted per 1 Million People
+## Combined Interventions: Top 20 Countries by Deaths Averted
 
-```{r fig-combined-per1m, fig.height=3.6}
-if (!is.null(fig_combined_per1m)) {
-  print(fig_combined_per1m)
+```{r pareto-combined-slide, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
+if (!is.null(p_pareto_combined)) {
+  print(p_pareto_combined)
 } else {
   plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Combined per-1M results\n(knit report.Rmd to generate)", cex = 1.2)
+  text(0.5, 0.5, "PLACEHOLDER: Combined Pareto chart\n(knit report.Rmd to generate)", cex = 1.2)
 }
 ```
-
-\begin{alertblock}{Why Per-Capita Only}
-Totals are not shown. Hypertension and TFA interventions have different target populations; per-capita rates enable valid comparison.
-\end{alertblock}
 
 <!-- ======================================================================
      4. BANGLADESH CASE EXAMPLE
@@ -345,15 +371,19 @@ Bangladesh: `r if (exists("total_bd_chart_fmt")) total_bd_chart_fmt else "N/A"` 
 \justifying
 
 \begin{enumerate}
-  \item \textbf{Proven at scale}: RTSL hypertension control programs are the primary driver of projected mortality reductions, operating across `r n_countries` countries and reaching millions of patients
-  \item \textbf{Policy impact is real}: Trans-fat elimination policies supported by RTSL are projected to prevent hundreds of thousands of additional deaths from heart disease
-  \item \textbf{Scale amplifies returns}: The countries with the largest programs --- India, Bangladesh, China --- contribute the most lives saved, demonstrating the value of continued expansion
+  \item \textbf{Hypertension control drives most projected impact}: RTSL-supported hypertension control programs account for the largest share of deaths averted across participating countries.
+  \item \textbf{Trans-fat elimination adds substantial gains}: TFA policies are projected to prevent additional cardiovascular deaths beyond program-based hypertension control efforts.
+  \item \textbf{Scale matters}: Countries with the largest program reach and population coverage --- including India, Bangladesh, and Pakistan --- contribute the greatest absolute mortality reductions.
 \end{enumerate}
-<!--  \item \textbf{Conservative estimates}: Because the model assumes zero effect without RTSL, the actual impact is likely even greater than these projections suggest-->
 
 \begin{exampleblock}{Bottom Line}
-RTSL programs are projected to avert `r if (!is.na(total_combined)) fmt_M(total_combined) else "X"` million CVD deaths (`r study_years`) across `r n_countries` countries. These are not aspirational targets --- they are grounded in observed program data and available evidence.
+Across `r n_countries` countries, RTSL-supported hypertension control and trans-fat elimination interventions are projected to avert `r grand_combined_m` million deaths from 2017--2050. Because this total combines interventions with different target populations, it should be interpreted as an overall portfolio impact estimate.
 \end{exampleblock}
+<!--  \item \textbf{Conservative estimates}: Because the model assumes zero effect without RTSL, the actual impact is likely even greater than these projections suggest-->
+
+<!-- \begin{exampleblock}{Bottom Line} -->
+<!-- RTSL programs are projected to avert `r if (!is.na(total_combined)) fmt_M(total_combined) else "X"` million CVD deaths (`r study_years`) across `r n_countries` countries. These are not aspirational targets --- they are grounded in observed program data and available evidence. -->
+<!-- \end{exampleblock} -->
 
 <!-- <!-- ====================================================================== -->
 <!--      8. CLOSING DONOR ASK -->
@@ -374,42 +404,7 @@ RTSL programs are projected to avert `r if (!is.na(total_combined)) fmt_M(total_
 <!-- Continued and expanded investment in RTSL cardiovascular health programs is among the highest-impact opportunities in global health today. The evidence supports it. The programs are delivering. The lives saved are real. -->
 <!-- \end{exampleblock} -->
 
-<!-- ======================================================================
-     PARETO CHARTS: TOP 20 COUNTRIES
-     ====================================================================== -->
 
-## Hypertension Control: Top 20 Countries by Deaths Averted
-
-```{r pareto-htn-slide, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
-if (!is.null(p_pareto_htn)) {
-  print(p_pareto_htn)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: HTN Pareto chart\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
-
-## Trans Fat Elimination: Top 20 Countries by Deaths Averted
-
-```{r pareto-tfa-slide, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
-if (!is.null(p_pareto_tfa)) {
-  print(p_pareto_tfa)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: TFA Pareto chart\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
-
-## Combined Interventions: Top 20 Countries by Deaths Averted
-
-```{r pareto-combined-slide, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
-if (!is.null(p_pareto_combined)) {
-  print(p_pareto_combined)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Combined Pareto chart\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
 
 <!-- ======================================================================
      APPENDIX
@@ -752,6 +747,44 @@ cat("
 }
 ")
 ```
+
+
+## Top Contributing Countries
+
+```{r fig-top-countries, out.width="95%"}
+if (file.exists(png_top_countries)) {
+  knitr::include_graphics(png_top_countries)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Top countries\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+## Geographic Distribution of Impact
+
+```{r fig-map, out.width="95%"}
+if (file.exists(png_map)) {
+  knitr::include_graphics(png_map)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Geographic map\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+## Combined Impact: Deaths Averted per 1 Million People
+
+```{r fig-combined-per1m, fig.height=3.6}
+if (!is.null(fig_combined_per1m)) {
+  print(fig_combined_per1m)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Combined per-1M results\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+\begin{alertblock}{Why Per-Capita Only}
+Totals are not shown. Hypertension and TFA interventions have different target populations; per-capita rates enable valid comparison.
+\end{alertblock}
 
 <!-- <!-- ====================================================================== -->
 <!--      A11. NEXT STEPS (INTERNAL) -->
