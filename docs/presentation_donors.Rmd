@@ -170,6 +170,101 @@ Resolve to Save Lives partners with governments in `r n_countries` countries to 
 - **Targeting the highest-risk populations** with the most cost-effective interventions available
 
 <!-- ======================================================================
+     A5. RTSL HTN PROGRAM ENROLLMENT AND CONTROLLED POPULATION OVER TIME
+     ====================================================================== -->
+
+## RTSL Hypertension Program Enrollment and Controlled Population Over Time
+
+```{r fig-enrollment-control-trend, echo=FALSE, out.width="95%", fig.align="center"}
+if (file.exists(png_enrollment)) {
+  knitr::include_graphics(png_enrollment)
+} else {
+  plot.new()
+  text(
+    0.5, 0.5,
+    "PLACEHOLDER: Enrollment and controlled population trend\n(knit report.Rmd to generate)",
+    cex = 1.2
+  )
+}
+```
+\footnotesize RTSL hypertension program enrollment and controlled population over time across all countries.
+
+
+<!-- ======================================================================
+     5. GLOBAL RESULTS
+     ====================================================================== -->
+
+# Global Impact
+
+## Cumulative Deaths Averted Over Time --- All Countries
+
+```{r fig-global-cumulative, echo=FALSE, fig.height=3.7}
+if (!is.null(fig_global_cumulative)) {
+  global_htn <- attr(fig_global_cumulative, "global_cum_htn")
+  global_tfa <- attr(fig_global_cumulative, "global_cum_tfa")
+  
+  global_htn_fmt <- formatC(round(global_htn), format = "d", big.mark = ",")
+  global_tfa_fmt <- formatC(round(global_tfa), format = "d", big.mark = ",")
+  global_total_fmt <- formatC(round(global_htn + global_tfa), format = "d", big.mark = ",")
+
+  print(fig_global_cumulative)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Global cumulative chart\n(knit report.Rmd to generate)", cex = 1.2)
+  global_htn <- NA_real_
+  global_tfa <- NA_real_
+  global_htn_fmt <- "N/A"
+  global_tfa_fmt <- "N/A"
+  global_total_fmt <- "N/A"
+}
+```
+
+
+\begin{exampleblock}{By 2050}
+\small
+`r if (exists("global_htn_fmt")) global_htn_fmt else "N/A"` cumulative deaths averted from HTN control, 
+`r if (exists("global_tfa_fmt")) global_tfa_fmt else "N/A"` from TFA elimination, for a combined total of 
+`r if (exists("global_htn") & exists("global_tfa")) scales::comma(global_htn + global_tfa) else "N/A"` deaths averted globally.
+\end{exampleblock}
+
+## Top Contributing Countries
+
+```{r fig-top-countries, out.width="95%"}
+if (file.exists(png_top_countries)) {
+  knitr::include_graphics(png_top_countries)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Top countries\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+## Geographic Distribution of Impact
+
+```{r fig-map, out.width="95%"}
+if (file.exists(png_map)) {
+  knitr::include_graphics(png_map)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Geographic map\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+## Combined Impact: Deaths Averted per 1 Million People
+
+```{r fig-combined-per1m, fig.height=3.6}
+if (!is.null(fig_combined_per1m)) {
+  print(fig_combined_per1m)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Combined per-1M results\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+\begin{alertblock}{Why Per-Capita Only}
+Totals are not shown. Hypertension and TFA interventions have different target populations; per-capita rates enable valid comparison.
+\end{alertblock}
+
+<!-- ======================================================================
      4. BANGLADESH CASE EXAMPLE
      ====================================================================== -->
 
@@ -224,117 +319,55 @@ Bangladesh: `r if (exists("total_bd_chart_fmt")) total_bd_chart_fmt else "N/A"` 
 \footnotesize Cumulative deaths averted by intervention type. HTN figures reflect program population; TFA figures reflect national population.
 
 <!-- ======================================================================
-     5. GLOBAL RESULTS
-     ====================================================================== -->
-
-# Global Impact
-
-## Cumulative Deaths Averted Over Time --- All Countries
-
-```{r fig-global-cumulative, echo=FALSE, fig.height=3.4}
-if (!is.null(fig_global_cumulative)) {
-  global_htn_fmt <- formatC(round(attr(fig_global_cumulative, "global_cum_htn")), format = "d", big.mark = ",")
-  global_tfa_fmt <- formatC(round(attr(fig_global_cumulative, "global_cum_tfa")), format = "d", big.mark = ",")
-  print(fig_global_cumulative)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Global cumulative chart\n(knit report.Rmd to generate)", cex = 1.2)
-  global_htn_fmt <- "N/A"
-  global_tfa_fmt <- "N/A"
-}
-```
-
-\begin{exampleblock}{By 2050}
-`r if (exists("global_htn_fmt")) global_htn_fmt else "N/A"` cumulative deaths averted from hypertension control and `r if (exists("global_tfa_fmt")) global_tfa_fmt else "N/A"` from TFA elimination.
-\end{exampleblock}
-
-## Top Contributing Countries
-
-```{r fig-top-countries, out.width="95%"}
-if (file.exists(png_top_countries)) {
-  knitr::include_graphics(png_top_countries)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Top countries\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
-
-## Geographic Distribution of Impact
-
-```{r fig-map, out.width="95%"}
-if (file.exists(png_map)) {
-  knitr::include_graphics(png_map)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Geographic map\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
-
-## Combined Impact: Deaths Averted per 1 Million People
-
-```{r fig-combined-per1m, fig.height=3.6}
-if (!is.null(fig_combined_per1m)) {
-  print(fig_combined_per1m)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Combined per-1M results\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
-
-\begin{alertblock}{Why Per-Capita Only}
-Totals are not shown. Hypertension and TFA interventions have different target populations; per-capita rates enable valid comparison.
-\end{alertblock}
-
-<!-- ======================================================================
      6. HOW WE KNOW THIS
      ====================================================================== -->
 
-## How We Know This
+# How We Know This
 
 \justifying
 
 - **Grounded in observed data**: Program enrollment, blood pressure control rates, and policy timelines come directly from RTSL program monitoring (2017--2025)
 - **Best available epidemiologic evidence**: Baseline disease rates from the Global Burden of Disease 2023; treatment effects from published meta-analyses and clinical trials
 - **Country-by-country simulation**: Each of the `r n_countries` countries is modeled individually using its own demographic, epidemiologic, and program data --- projected through 2050
-- **Conservative by design**: The counterfactual assumes zero program effect without RTSL, meaning these projections represent a lower bound on the true impact of the programs
+<!-- - **Conservative by design**: The counterfactual assumes zero program effect without RTSL, meaning these projections represent a lower bound on the true impact of the programs -->
 
 <!-- ======================================================================
      7. KEY TAKEAWAYS
      ====================================================================== -->
 
-## Key Takeaways
+# Key Takeaways
 
 \justifying
 
 \begin{enumerate}
-  \item \textbf{Proven at scale}: RTSL hypertension control programs are the primary driver of projected mortality reductions, operating across \texttt{`r n_countries`} countries and reaching millions of patients
+  \item \textbf{Proven at scale}: RTSL hypertension control programs are the primary driver of projected mortality reductions, operating across `r n_countries` countries and reaching millions of patients
   \item \textbf{Policy impact is real}: Trans-fat elimination policies supported by RTSL are projected to prevent hundreds of thousands of additional deaths from heart disease
   \item \textbf{Scale amplifies returns}: The countries with the largest programs --- India, Bangladesh, China --- contribute the most lives saved, demonstrating the value of continued expansion
-  \item \textbf{Conservative estimates}: Because the model assumes zero effect without RTSL, the actual impact is likely even greater than these projections suggest
 \end{enumerate}
+<!--  \item \textbf{Conservative estimates}: Because the model assumes zero effect without RTSL, the actual impact is likely even greater than these projections suggest-->
 
 \begin{exampleblock}{Bottom Line}
-RTSL programs are projected to avert `r if (!is.na(total_combined)) fmt_M(total_combined) else "X"` million CVD deaths (`r study_years`) across `r n_countries` countries. These are not aspirational targets --- they are grounded in observed program data and conservative assumptions.
+RTSL programs are projected to avert `r if (!is.na(total_combined)) fmt_M(total_combined) else "X"` million CVD deaths (`r study_years`) across `r n_countries` countries. These are not aspirational targets --- they are grounded in observed program data and available evidence.
 \end{exampleblock}
 
-<!-- ======================================================================
-     8. CLOSING DONOR ASK
-     ====================================================================== -->
+<!-- <!-- ====================================================================== -->
+<!--      8. CLOSING DONOR ASK -->
+<!--      ====================================================================== --> -->
 
-## Why Continued Investment Matters
+<!-- # Why Continued Investment Matters -->
 
-\justifying
+<!-- \justifying -->
 
-\begin{enumerate}
-  \item \textbf{Programs are working}: Hypertension control rates have risen steadily across RTSL-supported countries since 2017. Sustained funding keeps these gains on track.
-  \item \textbf{The returns grow over time}: Cardiovascular interventions compound --- every additional year of program operation translates into accelerating lives saved through 2050.
-  \item \textbf{Disruption costs lives}: If programs stall or lose support, the projected `r if (!is.na(total_combined)) fmt_M(total_combined) else "12"` million deaths averted will not materialize. The counterfactual is not hypothetical --- it is the world without these programs.
-  \item \textbf{These are conservative projections}: The modeling assumes zero benefit without RTSL. The true value of continued investment is almost certainly higher.
-\end{enumerate}
+<!-- \begin{enumerate} -->
+<!--   \item \textbf{Programs are working}: Hypertension control rates have risen steadily across RTSL-supported countries since 2017. Sustained funding keeps these gains on track. -->
+<!--   \item \textbf{The returns grow over time}: Cardiovascular interventions compound --- every additional year of program operation translates into accelerating lives saved through 2050. -->
+<!--   \item \textbf{Disruption costs lives}: If programs stall or lose support, the projected `r if (!is.na(total_combined)) fmt_M(total_combined) else "12"` million deaths averted will not materialize. The counterfactual is not hypothetical --- it is the world without these programs. -->
+<!--   \item \textbf{These are conservative projections}: The modeling assumes zero benefit without RTSL. The true value of continued investment is almost certainly higher. -->
+<!-- \end{enumerate} -->
 
-\begin{exampleblock}{The Ask}
-Continued and expanded investment in RTSL cardiovascular health programs is among the highest-impact opportunities in global health today. The evidence supports it. The programs are delivering. The lives saved are real.
-\end{exampleblock}
+<!-- \begin{exampleblock}{The Ask} -->
+<!-- Continued and expanded investment in RTSL cardiovascular health programs is among the highest-impact opportunities in global health today. The evidence supports it. The programs are delivering. The lives saved are real. -->
+<!-- \end{exampleblock} -->
 
 <!-- ======================================================================
      APPENDIX
@@ -421,7 +454,7 @@ if (!is.null(tbl_countries_by_region)) {
 
 - **HTN Module** Excludes Anguilla, British Virgin Islands, St Kitts and Nevis, and Turks and Caicos, as these settings were not included in the 100 Million Lives model.
 
-- **TFA Module** Pending inclusion of countries with RTSL engagement but without hypertension programs (e.g., Turkey, Ukraine) in the TFA elimination scenario.
+- **TFA Module** Countries that implemented the ban after the REPLACE initiative.   
 
 <!-- ======================================================================
      A4. OBSERVED AND PROJECTED HTN CONTROL RATES
@@ -678,26 +711,26 @@ cat("
 ")
 ```
 
-<!-- ======================================================================
-     A11. NEXT STEPS (INTERNAL)
-     ====================================================================== -->
+<!-- <!-- ====================================================================== -->
+<!--      A11. NEXT STEPS (INTERNAL) -->
+<!--      ====================================================================== --> -->
 
-## Internal Next Steps
+<!-- ## Internal Next Steps -->
 
-\begin{enumerate}
-  \item \textbf{Validate country-level inputs} with national program managers --- particularly 2025 control rates and enrollment data
-  \item \textbf{TFA module} Add counries with RTSL engagement but not with hypertension programs (e.g., Turkey, Ukraine) to the TFA elimination scenario.
-   \item \textbf{Refine age/sex distributions} Update the model to incorporate actual program-specific age and sex distributions. Current results rely on approximations and are likely \textbf{underestimating impact}, given the observed concentration of enrollment in higher-risk (older) age groups.
-\end{enumerate}
+<!-- \begin{enumerate} -->
+<!--   \item \textbf{Validate country-level inputs} with national program managers --- particularly 2025 control rates and enrollment data -->
+<!--   \item \textbf{TFA module} Add counries with RTSL engagement but not with hypertension programs (e.g., Turkey, Ukraine) to the TFA elimination scenario. -->
+<!--    \item \textbf{Refine age/sex distributions} Update the model to incorporate actual program-specific age and sex distributions. Current results rely on approximations and are likely \textbf{underestimating impact}, given the observed concentration of enrollment in higher-risk (older) age groups. -->
+<!-- \end{enumerate} -->
 
-<!-- \item \textbf{Integrate statin therapy} for a comprehensive three-intervention assessment -->
-  <!-- \item \textbf{Add probabilistic sensitivity analysis} to quantify uncertainty around key parameters and provide confidence intervals -->
+<!-- <!-- \item \textbf{Integrate statin therapy} for a comprehensive three-intervention assessment --> -->
+<!--   <!-- \item \textbf{Add probabilistic sensitivity analysis} to quantify uncertainty around key parameters and provide confidence intervals --> -->
 
-\medskip
+<!-- \medskip -->
 
-\begin{alertblock}{Decision Needed}
-Agree on the reporting unit for external communications: deaths averted per 1M program population vs.\ total national deaths averted.
-\end{alertblock}
+<!-- \begin{alertblock}{Decision Needed} -->
+<!-- Agree on the reporting unit for external communications: deaths averted per 1M program population vs.\ total national deaths averted. -->
+<!-- \end{alertblock} -->
 
 <!-- ======================================================================
      COMMENTED-OUT SLIDES (preserved from original)

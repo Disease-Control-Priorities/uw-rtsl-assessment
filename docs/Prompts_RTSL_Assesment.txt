@@ -42,3 +42,37 @@ Implementation principles:
 #####################################################################################
 #%###################################################################################
 
+You are modifying two files: report.RMD and presentation_donors.rmd. Do NOT modify any other files.
+
+Context:
+- In report.RMD, there is a dataframe called dt_excel_per1m_final with a column n_deaths_averted that contains deaths averted data by country and intervention scenario for 2017-2050.
+- HTN (hypertension control) and TFA (trans fat elimination) have different target populations, so they must be filtered separately by scenario. Do NOT use the combined "HTN Control + TFA Elimination" scenario row. Instead, compute combined totals by summing the separate HTN and TFA scenario results per country.
+
+First, read both files thoroughly to understand the existing structure, variable names, exact scenario label strings, and how dt_excel_per1m_final is constructed.
+
+What to build in report.RMD:
+
+Add code chunks AFTER dt_excel_per1m_final is computed that produce three ggplot2 Pareto chart objects:
+
+1. p_pareto_htn - HTN Control Pareto Chart: Filter dt_excel_per1m_final for the HTN control scenario only. Aggregate n_deaths_averted by country. Rank descending. Show top 20 countries as individual bars plus one "Rest of countries" bar summing all remaining countries.
+
+2. p_pareto_tfa - TFA Elimination Pareto Chart: Same approach but filtered for the TFA elimination scenario only.
+
+3. p_pareto_combined - Combined Interventions Stacked Pareto Chart: For each country, sum n_deaths_averted from the HTN and TFA scenarios separately. Create a stacked bar chart (one color per intervention). Rank the top 20 countries by total (HTN + TFA) descending, plus a "Rest of countries" stacked bar.
+
+All three plots must have:
+- Clear axis labels (country on x, "Deaths Averted (2017-2050)" on y)
+- Rotated x-axis labels for readability
+- Consistent color scheme distinguishing HTN vs TFA in the stacked chart
+
+What to build in presentation_donors.rmd:
+
+Add three new slides that reference the plot objects created in report.RMD:
+
+Slide 1 title: "Hypertension Control: Top 20 Countries by Deaths Averted" showing p_pareto_htn
+Slide 2 title: "Trans Fat Elimination: Top 20 Countries by Deaths Averted" showing p_pareto_tfa
+Slide 3 title: "Combined Interventions: Top 20 Countries by Deaths Averted" showing p_pareto_combined
+
+Use fig.width=12, fig.height=6, echo=FALSE for all three plot chunks.
+
+Important: Match the exact scenario label strings used in the data when filtering. Check the actual values in the code that creates dt_excel_per1m_final.
