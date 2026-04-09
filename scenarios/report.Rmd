@@ -2381,6 +2381,225 @@ saveRDS(fig_combined_per1m, paste0(slides_dir, "sl_fig_combined_per1m.rds"))
 message("SL-NEW saved: sl_fig_combined_per1m.rds")
 ```
 
+```{r sl-fig-tfa-timeline, message=FALSE, warning=FALSE, echo=FALSE, fig.width=12, fig.height=6}
+# ---- TFA Ban Implementation Timeline (bar + line, dual y-axes) ----
+# Uses dt_tfa_scenarios loaded earlier in sl-tbl-tfa-countries chunk
+# and population data from PopulationsSingleAge0050.rds
+
+sl_fig_tfa_timeline <- NULL
+
+if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
+
+  # One row per country: earliest date_passed, plus tfa_rtsl_include flag
+  dt_tfa_timeline <- dt_tfa_scenarios[
+    !is.na(tfa_bpp_date_passed),
+    .(year_passed    = as.integer(min(tfa_bpp_date_passed, na.rm = TRUE)),
+      tfa_rtsl_include = first(tfa_rtsl_include)),
+    by = .(location)
+  ]
+
+  # Load population for cumulative coverage line
+  wpp_tfa <- tryCatch(
+    as.data.table(readRDS(paste0(wd_data, "PopulationsSingleAge0050.rds"))),
+    error = function(e) NULL
+  )
+
+  if (!is.null(wpp_tfa)) {
+    pop_total <- wpp_tfa[year_id == 2024, .(pop = sum(Nx, na.rm = TRUE)), by = location]
+    dt_tfa_timeline <- merge(dt_tfa_timeline, pop_total, by = "location", all.x = TRUE)
+    dt_tfa_timeline[is.na(pop), pop := 0]
+  } else {
+    dt_tfa_timeline[, pop := 0]
+  }
+
+  # Build cumulative counts by year
+  year_range <- seq(min(dt_tfa_timeline$year_passed), max(dt_tfa_timeline$year_passed))
+
+  dt_cumul_tfa <- rbindlist(lapply(year_range, function(yr) {
+    passed <- dt_tfa_timeline[year_passed <= yr]
+    data.table(
+      year = yr,
+      n_rtsl_include_yes = nrow(passed[tolower(tfa_rtsl_include) == "yes"]),
+      n_rtsl_include_no  = nrow(passed[tolower(tfa_rtsl_include) == "no"]),
+      cum_pop            = sum(passed$pop, na.rm = TRUE)
+    )
+  }))
+
+  dt_cumul_tfa[, n_total := n_rtsl_include_yes + n_rtsl_include_no]
+  dt_cumul_tfa[, cum_pop_b := cum_pop / 1e9]
+
+  # Melt for stacked bars
+  dt_bar <- melt(dt_cumul_tfa, id.vars = c("year", "n_total", "cum_pop_b"),
+                 measure.vars = c("n_rtsl_include_yes", "n_rtsl_include_no"),
+                 variable.name = "category", value.name = "n_countries")
+  dt_bar[, category := fifelse(category == "n_rtsl_include_yes",
+                                "RTSL Assessment",
+                                "Other Countries")]
+  dt_bar[, category := factor(category, levels = c("Other Countries", "RTSL Assessment"))]
+
+  # Scaling factor for dual y-axis: map population to country-count scale
+  max_countries <- max(dt_cumul_tfa$n_total)
+  max_pop_b     <- max(dt_cumul_tfa$cum_pop_b)
+  scale_factor  <- max_countries / max_pop_b
+
+  sl_fig_tfa_timeline <- ggplot() +
+    # Stacked bars: cumulative countries
+    geom_col(data = dt_bar,
+             aes(x = year, y = n_countries, fill = category),
+             width = 0.7) +
+    # Line: cumulative population (rescaled to country-count axis)
+    geom_line(data = dt_cumul_tfa,
+              aes(x = year, y = cum_pop_b * scale_factor),
+              color = "#2c3e50", linewidth = 1.2) +
+    geom_point(data = dt_cumul_tfa,
+               aes(x = year, y = cum_pop_b * scale_factor),
+               color = "#2c3e50", size = 2.5) +
+    # Data labels: cumulative country count on top of bars
+    geom_text(data = dt_cumul_tfa,
+              aes(x = year, y = n_total, label = n_total),
+              vjust = -0.5, size = 3.5, fontface = "bold") +
+    # WHO REPLACE annotation
+    geom_vline(xintercept = 2018, linetype = "dashed", color = "#c0392b",
+               linewidth = 0.7) +
+    annotate("text", x = 2018.15, y = max_countries * 0.92,
+             label = "WHO REPLACE\nInitiative (2018)",
+             hjust = 0, size = 3.2, color = "#c0392b", fontface = "italic") +
+    # Scales
+    scale_fill_manual(
+      values = c("RTSL Assessment"  = "#1f78b4",
+                 "Other Countries"   = "#a6cee3"),
+      name = NULL
+    ) +
+    scale_x_continuous(breaks = year_range,
+                       expand = expansion(mult = c(0.02, 0.05))) +
+    scale_y_continuous(
+      name   = "Cumulative Number of Countries",
+      expand = expansion(mult = c(0, 0.15)),
+      sec.axis = sec_axis(~ . / scale_factor,
+                          name = "Cumulative Population Covered (billions)")
+    ) +
+    labs(
+      title   = "Trans Fat Elimination: Global Best-Practice Policy Adoption",
+      subtitle = "Cumulative countries with TFA bans and population covered over time",
+      x       = "Year of Policy Passage",
+      caption = "Population: UNWPP 2024 total population. Line = cumulative population covered."
+    ) +
+    theme_minimal(base_size = 13) +
+    theme(
+      plot.title       = element_text(face = "bold", size = 15),
+      plot.subtitle    = element_text(color = "grey40", size = 11),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank(),
+      legend.position  = "top",
+      legend.justification = "left",
+      axis.title.y.right = element_text(color = "#2c3e50"),
+      axis.text.y.right  = element_text(color = "#2c3e50"),
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+
+  print(sl_fig_tfa_timeline)
+  saveRDS(sl_fig_tfa_timeline, paste0(slides_dir, "sl_fig_tfa_timeline.rds"))
+  ggsave(paste0(wd_outp, "assessment_tfa_timeline.png"), plot = sl_fig_tfa_timeline,
+         width = 12, height = 6, dpi = 300)
+  message("SL-NEW saved: sl_fig_tfa_timeline.rds")
+} else {
+  message("dt_tfa_scenarios not available — skipping TFA timeline plot")
+}
+```
+
+```{r sl-fig-country-map, message=FALSE, warning=FALSE, echo=FALSE, fig.width=12, fig.height=6}
+# ---- World Map: Country Coverage (HTN Program, TFA Ban, Both) ----
+# HTN program countries: from data_program (unique locations)
+# TFA ban countries: from dt_tfa_scenarios (countries with tfa_bpp_date_passed)
+# Engagement: tfa_rtsl_engagement
+
+sl_fig_country_map <- NULL
+
+htn_countries <- unique(data_program[intervention %in% int_order, location])
+
+if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
+
+  # TFA countries with a ban (date_passed is not NA) that are in RTSL assessment
+  dt_tfa_map <- dt_tfa_scenarios[
+    !is.na(tfa_bpp_date_passed),
+    .(tfa_rtsl_engagement = first(tfa_rtsl_engagement)),
+    by = .(location)
+  ]
+  tfa_countries <- dt_tfa_map$location
+
+  # Build classification
+  dt_class <- data.table(
+    location = union(htn_countries, tfa_countries)
+  )
+  dt_class[, has_htn := location %in% htn_countries]
+  dt_class[, has_tfa := location %in% tfa_countries]
+
+  # Merge engagement info
+  dt_class <- merge(dt_class, dt_tfa_map, by = "location", all.x = TRUE)
+
+  dt_class[, coverage := fcase(
+    has_htn & has_tfa, "HTN Program + TFA Ban",
+    has_htn & !has_tfa, "HTN Program Only",
+    !has_htn & has_tfa & tolower(tfa_rtsl_engagement) == "yes",
+      "TFA Ban Only (RTSL Engaged)",
+    default = NA_character_
+  )]
+
+  # Remove countries that don't match any display category
+  dt_class <- dt_class[!is.na(coverage)]
+
+  # Merge with ISO3 codes for map join
+  dt_class_iso <- merge(dt_class, countries_dt[, .(location, iso3)],
+                         by = "location", all.x = TRUE)
+
+  # Load world map
+  world <- ne_countries(scale = "medium", returnclass = "sf")
+
+  world_map <- merge(world, dt_class_iso[, .(iso3, coverage)],
+                     by.x = "adm0_a3", by.y = "iso3", all.x = TRUE)
+
+  # Color palette
+  coverage_cols <- c(
+    "HTN Program + TFA Ban"         = "#6a3d9a",
+    "HTN Program Only"              = "#1f78b4",
+    "TFA Ban Only (RTSL Engaged)"   = "#e31a1c"
+  )
+
+  sl_fig_country_map <- ggplot(world_map) +
+    geom_sf(aes(fill = coverage), color = "grey70", linewidth = 0.15) +
+    scale_fill_manual(
+      values   = coverage_cols,
+      na.value = "grey90",
+      name     = "Intervention Coverage",
+      na.translate = FALSE
+    ) +
+    coord_sf(crs = "+proj=robin") +
+    labs(
+      title    = "Global Coverage: HTN and TFA Interventions",
+      subtitle = "Countries with RTSL-associated hypertension programs and/or TFA best-practice policies",
+      caption  = "Source: RTSL program data and WHO TFA policy tracker"
+    ) +
+    theme_void(base_size = 13) +
+    theme(
+      plot.title    = element_text(face = "bold", size = 15),
+      plot.subtitle = element_text(color = "grey40", size = 11),
+      legend.position = "bottom",
+      legend.title  = element_text(face = "bold"),
+      legend.key.size = unit(0.5, "cm"),
+      plot.margin   = margin(10, 10, 10, 10)
+    ) +
+    guides(fill = guide_legend(nrow = 1))
+
+  print(sl_fig_country_map)
+  saveRDS(sl_fig_country_map, paste0(slides_dir, "sl_fig_country_map.rds"))
+  ggsave(paste0(wd_outp, "assessment_country_map.png"), plot = sl_fig_country_map,
+         width = 12, height = 6, dpi = 300)
+  message("SL-NEW saved: sl_fig_country_map.rds")
+} else {
+  message("dt_tfa_scenarios not available — skipping country map")
+}
+```
+
 ```{r slides-manifest, message=FALSE, warning=FALSE, echo=FALSE}
 sl_manifest <- data.table(
   file = c(
@@ -2398,9 +2617,11 @@ sl_manifest <- data.table(
     "sl_tbl_grand_total_lives_saved.rds",
     "sl_fig_global_cumulative.rds",
     "sl_tbl_bangladesh_summary.rds",
-    "sl_fig_bangladesh_cumulative.rds"
+    "sl_fig_bangladesh_cumulative.rds",
+    "sl_fig_tfa_timeline.rds",
+    "sl_fig_country_map.rds"
   ),
-  type = c(rep("rds", 6), rep("png", 3), rep("rds", 14)),
+  type = c(rep("rds", 6), rep("png", 3), rep("rds", 16)),
   consumed_by = c(
     "inline scalars", "tab-summary kable", "tab-region kable",
     "fig-top-countries ggplot", "fig-by-cause ggplot", "fig-deaths-averted ggplot",
@@ -2420,7 +2641,9 @@ sl_manifest <- data.table(
     "B4: Grand total lives saved table (presentation.Rmd)",
     "B5: Global cumulative chart (presentation.Rmd)",
     "B2: Bangladesh summary table (presentation.Rmd)",
-    "B3: Bangladesh cumulative chart (presentation.Rmd)"
+    "B3: Bangladesh cumulative chart (presentation.Rmd)",
+    "TFA timeline bar+line chart (presentation_donors.Rmd)",
+    "Country coverage world map (presentation_donors.Rmd)"
   )
 )
 saveRDS(sl_manifest, paste0(slides_dir, "sl_manifest.rds"))
