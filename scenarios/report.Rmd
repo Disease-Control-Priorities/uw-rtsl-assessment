@@ -1838,8 +1838,13 @@ message("Pareto chart objects saved to slides directory.")
 bau_total_deaths <- data_bau[intervention == "HTN Control + TFA Elimination" &
                                year >= 2017,
                               sum(dead, na.rm = TRUE)]
+n_htn_countries <- length(htn_countries_include)
+n_tfa_countries <- length(tfa_countries_include)
+
 sl_scalars <- list(
   n_countries      = n_countries,
+  n_htn_countries  = n_htn_countries,
+  n_tfa_countries  = n_tfa_countries,
   study_years      = study_years,
   year_min         = year_min,
   year_max         = year_max,
@@ -2300,11 +2305,12 @@ if (exists("dt_lives") && nrow(dt_lives) > 0) {
   tbl_grand_total_lives_saved <- data.table(
     Intervention = c("Hypertension Control", "TFA Elimination",
                      "Combined (All Interventions)"),
-    `Total Deaths Averted` = c(
+    `Deaths Averted (2017-2050)` = c(
       formatC(round(grand_htn), format = "d", big.mark = ","),
       formatC(round(grand_tfa), format = "d", big.mark = ","),
       formatC(round(grand_combined), format = "d", big.mark = ",")
-    )
+    ),
+    `Time Horizon` = rep(paste0(year_min, "-", year_max), 3)
   )
 
   # Store raw values for inline R expressions in presentation

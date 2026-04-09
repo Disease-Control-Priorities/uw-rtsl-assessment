@@ -46,6 +46,8 @@ if (file.exists(paste0(slides_dir, "sl_scalars.rds"))) {
 }
 
 n_countries           <- if (!is.null(sl$n_countries))      sl$n_countries      else "N"
+n_htn_countries       <- if (!is.null(sl$n_htn_countries))  sl$n_htn_countries  else "N"
+n_tfa_countries       <- if (!is.null(sl$n_tfa_countries))  sl$n_tfa_countries  else "N"
 study_years           <- if (!is.null(sl$study_years))      sl$study_years      else "20XX--20XX"
 total_bp              <- if (!is.null(sl$total_bp))         sl$total_bp         else NA
 total_tfa             <- if (!is.null(sl$total_tfa))        sl$total_tfa        else NA
@@ -263,19 +265,21 @@ if (!is.null(tbl_grand_total_lives_saved)) {
   grand_combined_val <- attr(tbl_grand_total_lives_saved, "grand_combined")
   grand_combined_fmt <- if (!is.null(grand_combined_val)) formatC(round(grand_combined_val), format = "d", big.mark = ",") else "N/A"
 
-  kable(tbl_grand_total_lives_saved, format = "latex", booktabs = TRUE) |>
+  kable(tbl_grand_total_lives_saved, format = "latex", booktabs = TRUE,
+        caption = "All countries: cumulative program-attributable impact by intervention") |>
     kable_styling(latex_options = c("hold_position"), font_size = 9) |>
-    row_spec(3, bold = TRUE) |>
-    footnote(general = "Combined total sums across interventions with different target populations (program pop for HTN; national pop for TFA). Interpret with caution.")
+    column_spec(2, bold = TRUE)
 } else {
   cat("\\textit{PLACEHOLDER: Grand total lives saved not yet available. Knit report.Rmd to generate.}")
   grand_combined_fmt <- "N/A"
 }
 ```
 
-\begin{exampleblock}{Bottom Line}
-Across `r n_countries` countries, RTSL hypertension control and trans-fat elimination are projected to avert `r grand_combined_m` million deaths (2017–2050).
-\end{exampleblock}
+\justifying
+
+Across `r n_countries` countries, RTSL cardiovascular health programs are projected to avert `r grand_combined_m` million deaths from 2017--2050. Hypertension control programs operate in `r n_htn_countries` countries, while trans-fat elimination policies cover `r n_tfa_countries` countries --- together representing the full scope of RTSL's global cardiovascular health portfolio.
+
+\footnotesize HTN totals reflect program population; TFA totals reflect national population.
 
 
 <!-- ## Deaths Averted by Intervention (All Scenarios) -->
