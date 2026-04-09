@@ -1533,6 +1533,108 @@ saveWorkbook(wb, out_xlsx, overwrite = TRUE)
 message("Tables exported to: ", out_xlsx)
 ```
 
+```{r pareto-charts, message=FALSE, warning=FALSE, echo=FALSE, fig.width=12, fig.height=6}
+# ---- Pareto Charts: Top 20 Countries by Deaths Averted ----------------------
+
+# Helper: build a top-20 + "Rest of countries" summary
+pareto_top20 <- function(dt, scenario_filter) {
+  dt_agg <- dt[scenario == scenario_filter,
+               .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+               by = location]
+  setorder(dt_agg, -deaths_averted)
+  top20 <- head(dt_agg, 20)
+  rest  <- dt_agg[!location %in% top20$location,
+                  .(location = "Rest of countries",
+                    deaths_averted = sum(deaths_averted, na.rm = TRUE))]
+  out <- rbind(top20, rest)
+  out[, location := factor(location, levels = out$location)]
+  out
+}
+
+# --- 1. HTN Control Pareto ---
+dt_pareto_htn <- pareto_top20(dt_excel_per1m_final, "HTN Control (Program)")
+
+p_pareto_htn <- ggplot(dt_pareto_htn,
+                        aes(x = location, y = deaths_averted)) +
+  geom_col(fill = int_cols["HTN Control (Program)"]) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
+       title = "HTN Control: Top 20 Countries by Deaths Averted") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# --- 2. TFA Elimination Pareto ---
+dt_pareto_tfa <- pareto_top20(dt_excel_per1m_final, "TFA Elimination")
+
+p_pareto_tfa <- ggplot(dt_pareto_tfa,
+                        aes(x = location, y = deaths_averted)) +
+  geom_col(fill = int_cols["TFA Elimination"]) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
+       title = "TFA Elimination: Top 20 Countries by Deaths Averted") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# --- 3. Combined Stacked Pareto ---
+# Sum HTN and TFA separately per country (do NOT use the combined scenario row)
+dt_htn_by_loc <- dt_excel_per1m_final[
+  scenario == "HTN Control (Program)",
+  .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+  by = location
+]
+dt_tfa_by_loc <- dt_excel_per1m_final[
+  scenario == "TFA Elimination",
+  .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+  by = location
+]
+
+dt_combined <- merge(
+  dt_htn_by_loc[, .(location, htn = deaths_averted)],
+  dt_tfa_by_loc[, .(location, tfa = deaths_averted)],
+  by = "location", all = TRUE
+)
+dt_combined[is.na(htn), htn := 0]
+dt_combined[is.na(tfa), tfa := 0]
+dt_combined[, total := htn + tfa]
+setorder(dt_combined, -total)
+
+top20_locs <- head(dt_combined$location, 20)
+rest_row <- dt_combined[!location %in% top20_locs,
+                        .(location = "Rest of countries",
+                          htn = sum(htn), tfa = sum(tfa),
+                          total = sum(total))]
+dt_combined_top <- rbind(dt_combined[location %in% top20_locs], rest_row)
+dt_combined_top[, location := factor(location, levels = dt_combined_top$location)]
+
+# Melt for stacked bar
+dt_stacked <- melt(dt_combined_top, id.vars = "location",
+                   measure.vars = c("htn", "tfa"),
+                   variable.name = "intervention",
+                   value.name = "deaths_averted")
+dt_stacked[, intervention := fifelse(intervention == "htn",
+                                      "HTN Control (Program)",
+                                      "TFA Elimination")]
+
+p_pareto_combined <- ggplot(dt_stacked,
+                             aes(x = location, y = deaths_averted,
+                                 fill = intervention)) +
+  geom_col() +
+  scale_fill_manual(values = int_cols[c("HTN Control (Program)",
+                                         "TFA Elimination")]) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
+       title = "Combined Interventions: Top 20 Countries by Deaths Averted",
+       fill = "Intervention") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Save plot objects for presentation_donors.Rmd
+saveRDS(p_pareto_htn,      paste0(slides_dir, "sl_pareto_htn.rds"))
+saveRDS(p_pareto_tfa,      paste0(slides_dir, "sl_pareto_tfa.rds"))
+saveRDS(p_pareto_combined, paste0(slides_dir, "sl_pareto_combined.rds"))
+message("Pareto chart objects saved to slides directory.")
+```
+
 ---
 
 # Slide Deck Outputs
