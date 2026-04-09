@@ -239,6 +239,20 @@ data.out[intervention %in% c("bp_tfa"),
 # Keep only recognised scenarios
 data.out <- data.out[intervention %in% c("Counterfactual", int_order)]
 
+# HTN control countries
+dt_htn_control_scenarios <- fread(paste0(wd_data, "htn_control_scenarios_by_loc_year.csv"))
+
+htn_countries_include <- unique(dt_htn_control_scenarios[, location])
+
+# Remove countries not included in RTSL TFA calculations (if any slipped in)
+dt_tfa_scenarios <- readRDS(file = paste0(wd_data,"tfa_policy_scenarios_assessment.rds"))
+
+tfa_countries_include <- unique(dt_tfa_scenarios[tfa_rtsl_include == "Yes", location])
+
+countries_include <- unique(c(htn_countries_include, tfa_countries_include))
+
+## Filter model output to included countries only
+data.out <- data.out[location %in% countries_include]
 # ---- Separate program and counterfactual runs --------------------------------
 # Program-attributable impact:
 #   deaths_averted = deaths(bau_upper) - deaths(program)
@@ -389,60 +403,99 @@ if (!is.null(htn_scenarios)) {
 ```
 
 ```{r htn-enrollment, message=FALSE, warning=FALSE, echo=FALSE, fig.width=10, fig.height=5}
-# # Program enrollment trajectory
-# if (!is.null(htn_scenarios)) {
-#   dt_enroll <- htn_scenarios[!is.na(enrolled) & enrolled > 0,
-#                              .(location, year, enrolled)]
-#   dt_enroll_total <- dt_enroll[, .(total_enrolled = sum(enrolled, na.rm = TRUE)),
-#                                by = year]
 # 
-#   g <- ggplot() +
-#     geom_line(data = dt_enroll,
-#               aes(x = year, y = enrolled / 1e3, group = location),
-#               color = "grey60", linewidth = 0.5, alpha = 0.6) +
-#     geom_line(data = dt_enroll_total,
-#               aes(x = year, y = total_enrolled / 1e6),
-#               color = "#1f78b4", linewidth = 1.2) +
-#     scale_x_continuous(breaks = seq(2017, 2025, 1)) +
+# # Program enrollment trajectory (TOTAL only)
+# if (!is.null(htn_scenarios)) {
+# 
+#   dt_enroll <- htn_scenarios[
+#     !is.na(enrolled) & enrolled > 0,
+#     .(location, year, enrolled)
+#   ]
+# 
+#   dt_enroll_total <- dt_enroll[
+#     , .(total_enrolled = sum(enrolled, na.rm = TRUE)),
+#     by = year
+#   ]
+# 
+#   g <- ggplot(dt_enroll_total, aes(x = year, y = total_enrolled / 1e6)) +
+#     geom_line(color = "#1f78b4", linewidth = 1.3) +
+#     scale_x_continuous(breaks = seq(2015, 2050, 5)) +
 #     scale_y_continuous(labels = comma) +
 #     labs(
 #       title    = "RTSL Hypertension Program Enrollment Over Time",
-#       subtitle = "Grey = country-level (thousands); Blue = total across all countries (millions)",
-#       x = "Year", y = "Enrolled (thousands / millions)"
+#       subtitle = "Total enrollment across all countries (millions)",
+#       x = "Year",
+#       y = "Enrolled (millions)"
 #     ) +
 #     theme_minimal(base_size = 13) +
-#     theme(plot.title = element_text(face = "bold"), panel.grid.minor = element_blank())
+#     theme(
+#       plot.title = element_text(face = "bold"),
+#       panel.grid.minor = element_blank()
+#     )
+# 
 #   print(g)
-#   ggsave(paste0(wd_outp, "assessment_enrollment_trend.png"), plot = g,
-#          width = 11, height = 5, dpi = 300)
+# 
+#   ggsave(
+#     paste0(wd_outp, "assessment_enrollment_trend.png"),
+#     plot = g,
+#     width = 11, height = 5, dpi = 300
+#   )
 # }
-# Program enrollment trajectory (TOTAL only)
+
 if (!is.null(htn_scenarios)) {
 
   dt_enroll <- htn_scenarios[
     !is.na(enrolled) & enrolled > 0,
-    .(location, year, enrolled)
+    .(
+      location,
+      year,
+      enrolled,
+      control_rate_imputed
+    )
+  ][
+    ,
+    controlled_pop := enrolled * control_rate_imputed
   ]
 
   dt_enroll_total <- dt_enroll[
-    , .(total_enrolled = sum(enrolled, na.rm = TRUE)),
+    ,
+    .(
+      total_enrolled   = sum(enrolled, na.rm = TRUE),
+      total_controlled = sum(controlled_pop, na.rm = TRUE)
+    ),
     by = year
   ]
 
-  g <- ggplot(dt_enroll_total, aes(x = year, y = total_enrolled / 1e6)) +
-    geom_line(color = "#1f78b4", linewidth = 1.3) +
+  g <- ggplot(dt_enroll_total, aes(x = year)) +
+    geom_line(
+      aes(y = total_enrolled / 1e6, color = "Enrolled population"),
+      linewidth = 1.3
+    ) +
+    geom_line(
+      aes(y = total_controlled / 1e6, color = "Controlled population"),
+      linewidth = 1.3,
+      linetype = "solid"
+    ) +
     scale_x_continuous(breaks = seq(2015, 2050, 5)) +
     scale_y_continuous(labels = comma) +
+    scale_color_manual(
+      values = c(
+        "Enrolled population"   = "#1f78b4",
+        "Controlled population" = "#33a02c"
+      ),
+      name = NULL
+    ) +
     labs(
-      title    = "RTSL Hypertension Program Enrollment Over Time",
-      subtitle = "Total enrollment across all countries (millions)",
+      title    = "RTSL Hypertension Program Enrollment and Controlled Population Over Time",
+      subtitle = "Total enrolled and controlled population across all countries (millions)",
       x = "Year",
-      y = "Enrolled (millions)"
+      y = "Population (millions)"
     ) +
     theme_minimal(base_size = 13) +
     theme(
       plot.title = element_text(face = "bold"),
-      panel.grid.minor = element_blank()
+      panel.grid.minor = element_blank(),
+      legend.position = "top"
     )
 
   print(g)
@@ -1226,34 +1279,52 @@ wpp <- tryCatch(
 )
 
 if (!is.null(wpp)) {
-  pop_2019 <- wpp[year_id == 2019 & age >= 20,
-                  .(pop = sum(Nx, na.rm = TRUE)), by = location]
+  pop_2019 <- wpp[
+    year_id == 2019 & age >= 20,
+    .(pop = sum(Nx, na.rm = TRUE)),
+    by = location
+  ]
+  
   dt_map <- merge(dt_tab4, pop_2019, by = "location", all.x = TRUE)
-  dt_map[, da_per100k := deaths_averted / pop * 1e5]
+  dt_map[, da_per1m := deaths_averted / pop * 1e6]
 
   if (nrow(countries_dt) > 0) {
-    world    <- ne_countries(scale = "medium", returnclass = "sf")
-    world_dt <- merge(world,
-                      merge(dt_map, countries_dt[, .(location, iso3)],
-                            by = "location", all.x = TRUE),
-                      by.x = "adm0_a3", by.y = "iso3", all.x = TRUE)
+    world <- ne_countries(scale = "medium", returnclass = "sf")
+    
+    world_dt <- merge(
+      world,
+      merge(dt_map, countries_dt[, .(location, iso3)],
+            by = "location", all.x = TRUE),
+      by.x = "adm0_a3", by.y = "iso3", all.x = TRUE
+    )
 
     g <- ggplot(world_dt) +
-      geom_sf(aes(fill = da_per100k), color = "grey80", linewidth = 0.1) +
-      scale_fill_viridis_c(name = "per 100,000", na.value = "grey90",
-                           option = "C", direction = -1) +
+      geom_sf(aes(fill = da_per1m), color = "grey80", linewidth = 0.1) +
+      scale_fill_viridis_c(
+        name = "per 1,000,000",
+        na.value = "grey90",
+        option = "C",
+        direction = -1
+      ) +
       labs(
-        title    = "Program-Attributable Deaths Averted per 100,000 Population, 2017\u20132050",
+        title = "Program-Attributable Deaths Averted per 1,000,000 Population, 2017–2050",
         subtitle = "HTN control + TFA elimination combined",
-        caption  = "Source: Model output; denominator = UNWPP 2024 age 20+ population"
+        caption = "Source: Model output; denominator = UNWPP 2024 age 20+ population"
       ) +
       theme_void(base_size = 12) +
-      theme(legend.position = "right",
-            plot.title    = element_text(face = "bold"),
-            plot.subtitle = element_text(color = "grey40"))
+      theme(
+        legend.position = "right",
+        plot.title = element_text(face = "bold"),
+        plot.subtitle = element_text(color = "grey40")
+      )
+
     print(g)
-    ggsave(paste0(wd_outp, "assessment_fig6_map.png"), plot = g,
-           width = 11, height = 5, dpi = 300)
+
+    ggsave(
+      paste0(wd_outp, "assessment_fig6_map.png"),
+      plot = g,
+      width = 11, height = 5, dpi = 300
+    )
   }
 } else {
   message("Population file not found - skipping map.")
@@ -1518,6 +1589,13 @@ dt_excel_per1m[, pct_averted := round(
           deaths_averted / cf_deaths_ref * 100, 0), 2)]
 dt_excel_per1m[scenario == "Counterfactual", pct_averted := 0]
 
+# Assigne deaths averted per 1M and pct averted to 0 for any rows where population denominator is 0
+dt_excel_per1m[program_population == 0, `:=`(
+  deaths_averted_per_1M = 0,
+  pct_averted = 0
+)]
+
+
 # Select final columns and sort
 dt_excel_per1m_final <- dt_excel_per1m[, .(
   location, year, scenario, population, program_population,
@@ -1533,100 +1611,219 @@ saveWorkbook(wb, out_xlsx, overwrite = TRUE)
 message("Tables exported to: ", out_xlsx)
 ```
 
+# Slide Deck Outputs
+
+```{r slides-setup, message=FALSE, warning=FALSE, echo=FALSE}
+slides_dir <- paste0(wd_outp, "slides/")
+if (!dir.exists(slides_dir)) dir.create(slides_dir, recursive = TRUE)
+message("Slide artefacts will be written to: ", slides_dir)
+```
+
+
 ```{r pareto-charts, message=FALSE, warning=FALSE, echo=FALSE, fig.width=12, fig.height=6}
+# # ---- Pareto Charts: Top 20 Countries by Deaths Averted ----------------------
+# 
+# # Helper: build a top-20 + "Rest of countries" summary
+# pareto_top20 <- function(dt, scenario_filter) {
+#   dt_agg <- dt[scenario == scenario_filter,
+#                .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+#                by = location]
+#   setorder(dt_agg, -deaths_averted)
+#   top20 <- head(dt_agg, 20)
+#   rest  <- dt_agg[!location %in% top20$location,
+#                   .(location = "Rest of countries",
+#                     deaths_averted = sum(deaths_averted, na.rm = TRUE))]
+#   out <- rbind(top20, rest)
+#   out[, location := factor(location, levels = out$location)]
+#   out
+# }
+# 
+# # --- 1. HTN Control Pareto ---
+# dt_pareto_htn <- pareto_top20(dt_excel_per1m_final, "HTN Control (Program)")
+# 
+# p_pareto_htn <- ggplot(dt_pareto_htn,
+#                         aes(x = location, y = deaths_averted)) +
+#   geom_col(fill = int_cols["HTN Control (Program)"]) +
+#   scale_y_continuous(labels = scales::comma) +
+#   labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
+#        title = "HTN Control: Top 20 Countries by Deaths Averted") +
+#   theme_minimal(base_size = 12) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# # --- 2. TFA Elimination Pareto ---
+# dt_pareto_tfa <- pareto_top20(dt_excel_per1m_final, "TFA Elimination")
+# 
+# p_pareto_tfa <- ggplot(dt_pareto_tfa,
+#                         aes(x = location, y = deaths_averted)) +
+#   geom_col(fill = int_cols["TFA Elimination"]) +
+#   scale_y_continuous(labels = scales::comma) +
+#   labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
+#        title = "TFA Elimination: Top 20 Countries by Deaths Averted") +
+#   theme_minimal(base_size = 12) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# # --- 3. Combined Stacked Pareto ---
+# # Sum HTN and TFA separately per country (do NOT use the combined scenario row)
+# dt_htn_by_loc <- dt_excel_per1m_final[
+#   scenario == "HTN Control (Program)",
+#   .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+#   by = location
+# ]
+# dt_tfa_by_loc <- dt_excel_per1m_final[
+#   scenario == "TFA Elimination",
+#   .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+#   by = location
+# ]
+# 
+# dt_combined <- merge(
+#   dt_htn_by_loc[, .(location, htn = deaths_averted)],
+#   dt_tfa_by_loc[, .(location, tfa = deaths_averted)],
+#   by = "location", all = TRUE
+# )
+# dt_combined[is.na(htn), htn := 0]
+# dt_combined[is.na(tfa), tfa := 0]
+# dt_combined[, total := htn + tfa]
+# setorder(dt_combined, -total)
+# 
+# top20_locs <- head(dt_combined$location, 20)
+# rest_row <- dt_combined[!location %in% top20_locs,
+#                         .(location = "Rest of countries",
+#                           htn = sum(htn), tfa = sum(tfa),
+#                           total = sum(total))]
+# dt_combined_top <- rbind(dt_combined[location %in% top20_locs], rest_row)
+# dt_combined_top[, location := factor(location, levels = dt_combined_top$location)]
+# 
+# # Melt for stacked bar
+# dt_stacked <- melt(dt_combined_top, id.vars = "location",
+#                    measure.vars = c("htn", "tfa"),
+#                    variable.name = "intervention",
+#                    value.name = "deaths_averted")
+# dt_stacked[, intervention := fifelse(intervention == "htn",
+#                                       "HTN Control (Program)",
+#                                       "TFA Elimination")]
+# 
+# p_pareto_combined <- ggplot(dt_stacked,
+#                              aes(x = location, y = deaths_averted,
+#                                  fill = intervention)) +
+#   geom_col() +
+#   scale_fill_manual(values = int_cols[c("HTN Control (Program)",
+#                                          "TFA Elimination")]) +
+#   scale_y_continuous(labels = scales::comma) +
+#   labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
+#        title = "Combined Interventions: Top 20 Countries by Deaths Averted",
+#        fill = "Intervention") +
+#   theme_minimal(base_size = 12) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# 
+# # Save plot objects for presentation_donors.Rmd
+# saveRDS(p_pareto_htn,      paste0(slides_dir, "sl_pareto_htn.rds"))
+# saveRDS(p_pareto_tfa,      paste0(slides_dir, "sl_pareto_tfa.rds"))
+# saveRDS(p_pareto_combined, paste0(slides_dir, "sl_pareto_combined.rds"))
+# message("Pareto chart objects saved to slides directory.")
 # ---- Pareto Charts: Top 20 Countries by Deaths Averted ----------------------
 
-# Helper: build a top-20 + "Rest of countries" summary
+# Helper: build a top-20 + "Rest of countries" summary with cumulative %
 pareto_top20 <- function(dt, scenario_filter) {
   dt_agg <- dt[scenario == scenario_filter,
                .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
                by = location]
   setorder(dt_agg, -deaths_averted)
+
   top20 <- head(dt_agg, 20)
   rest  <- dt_agg[!location %in% top20$location,
                   .(location = "Rest of countries",
                     deaths_averted = sum(deaths_averted, na.rm = TRUE))]
-  out <- rbind(top20, rest)
-  out[, location := factor(location, levels = out$location)]
+  
+  out <- rbind(top20, rest, fill = TRUE)
+  setorder(out, -deaths_averted)
+
+  out[, cum_deaths := cumsum(deaths_averted)]
+  out[, cum_pct := cum_deaths / sum(deaths_averted)]
+  out[, location := factor(location, levels = location)]
+  
   out
+}
+
+# Helper: make a Pareto plot
+make_pareto_plot <- function(dt_pareto, fill_color, title_text) {
+  y_max <- max(dt_pareto$deaths_averted, na.rm = TRUE)
+
+  ggplot(dt_pareto, aes(x = location)) +
+    geom_col(aes(y = deaths_averted), fill = fill_color) +
+    geom_line(aes(y = cum_pct * y_max, group = 1), linewidth = 1) +
+    geom_point(aes(y = cum_pct * y_max), size = 2) +
+    scale_y_continuous(
+      labels = scales::comma,
+      name   = "Deaths Averted (2017–2050)",
+      sec.axis = sec_axis(
+        ~ . / y_max,
+        name   = "Cumulative percentage",
+        labels = scales::percent_format(accuracy = 1)
+      )
+    ) +
+    labs(x = "Country", title = title_text) +
+    theme_minimal(base_size = 12) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
 }
 
 # --- 1. HTN Control Pareto ---
 dt_pareto_htn <- pareto_top20(dt_excel_per1m_final, "HTN Control (Program)")
 
-p_pareto_htn <- ggplot(dt_pareto_htn,
-                        aes(x = location, y = deaths_averted)) +
-  geom_col(fill = int_cols["HTN Control (Program)"]) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
-       title = "HTN Control: Top 20 Countries by Deaths Averted") +
-  theme_minimal(base_size = 12) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p_pareto_htn <- make_pareto_plot(
+  dt_pareto = dt_pareto_htn,
+  fill_color = int_cols["HTN Control (Program)"],
+  title_text = "HTN Control: Top 20 Countries by Deaths Averted"
+)
 
 # --- 2. TFA Elimination Pareto ---
 dt_pareto_tfa <- pareto_top20(dt_excel_per1m_final, "TFA Elimination")
 
-p_pareto_tfa <- ggplot(dt_pareto_tfa,
-                        aes(x = location, y = deaths_averted)) +
-  geom_col(fill = int_cols["TFA Elimination"]) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
-       title = "TFA Elimination: Top 20 Countries by Deaths Averted") +
-  theme_minimal(base_size = 12) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p_pareto_tfa <- make_pareto_plot(
+  dt_pareto = dt_pareto_tfa,
+  fill_color = int_cols["TFA Elimination"],
+  title_text = "TFA Elimination: Top 20 Countries by Deaths Averted"
+)
 
-# --- 3. Combined Stacked Pareto ---
+# --- 3. Combined Pareto (HTN + TFA summed by country) ---
 # Sum HTN and TFA separately per country (do NOT use the combined scenario row)
 dt_htn_by_loc <- dt_excel_per1m_final[
   scenario == "HTN Control (Program)",
-  .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+  .(htn = sum(n_deaths_averted, na.rm = TRUE)),
   by = location
 ]
+
 dt_tfa_by_loc <- dt_excel_per1m_final[
   scenario == "TFA Elimination",
-  .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+  .(tfa = sum(n_deaths_averted, na.rm = TRUE)),
   by = location
 ]
 
-dt_combined <- merge(
-  dt_htn_by_loc[, .(location, htn = deaths_averted)],
-  dt_tfa_by_loc[, .(location, tfa = deaths_averted)],
-  by = "location", all = TRUE
-)
+dt_combined <- merge(dt_htn_by_loc, dt_tfa_by_loc, by = "location", all = TRUE)
 dt_combined[is.na(htn), htn := 0]
 dt_combined[is.na(tfa), tfa := 0]
-dt_combined[, total := htn + tfa]
-setorder(dt_combined, -total)
+dt_combined[, deaths_averted := htn + tfa]
+setorder(dt_combined, -deaths_averted)
 
-top20_locs <- head(dt_combined$location, 20)
-rest_row <- dt_combined[!location %in% top20_locs,
-                        .(location = "Rest of countries",
-                          htn = sum(htn), tfa = sum(tfa),
-                          total = sum(total))]
-dt_combined_top <- rbind(dt_combined[location %in% top20_locs], rest_row)
-dt_combined_top[, location := factor(location, levels = dt_combined_top$location)]
+top20 <- head(dt_combined, 20)
+rest  <- dt_combined[!location %in% top20$location,
+                     .(location = "Rest of countries",
+                       htn = sum(htn),
+                       tfa = sum(tfa),
+                       deaths_averted = sum(deaths_averted))]
+dt_pareto_combined <- rbind(top20, rest, fill = TRUE)
+setorder(dt_pareto_combined, -deaths_averted)
 
-# Melt for stacked bar
-dt_stacked <- melt(dt_combined_top, id.vars = "location",
-                   measure.vars = c("htn", "tfa"),
-                   variable.name = "intervention",
-                   value.name = "deaths_averted")
-dt_stacked[, intervention := fifelse(intervention == "htn",
-                                      "HTN Control (Program)",
-                                      "TFA Elimination")]
+dt_pareto_combined[, cum_deaths := cumsum(deaths_averted)]
+dt_pareto_combined[, cum_pct := cum_deaths / sum(deaths_averted)]
+dt_pareto_combined[, location := factor(location, levels = location)]
 
-p_pareto_combined <- ggplot(dt_stacked,
-                             aes(x = location, y = deaths_averted,
-                                 fill = intervention)) +
-  geom_col() +
-  scale_fill_manual(values = int_cols[c("HTN Control (Program)",
-                                         "TFA Elimination")]) +
-  scale_y_continuous(labels = scales::comma) +
-  labs(x = "Country", y = "Deaths Averted (2017\u20132050)",
-       title = "Combined Interventions: Top 20 Countries by Deaths Averted",
-       fill = "Intervention") +
-  theme_minimal(base_size = 12) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+p_pareto_combined <- make_pareto_plot(
+  dt_pareto = dt_pareto_combined,
+  fill_color = "grey60",
+  title_text = "Combined Interventions: Top 20 Countries by Deaths Averted"
+)
 
 # Save plot objects for presentation_donors.Rmd
 saveRDS(p_pareto_htn,      paste0(slides_dir, "sl_pareto_htn.rds"))
@@ -1636,14 +1833,6 @@ message("Pareto chart objects saved to slides directory.")
 ```
 
 ---
-
-# Slide Deck Outputs
-
-```{r slides-setup, message=FALSE, warning=FALSE, echo=FALSE}
-slides_dir <- paste0(wd_outp, "slides/")
-if (!dir.exists(slides_dir)) dir.create(slides_dir, recursive = TRUE)
-message("Slide artefacts will be written to: ", slides_dir)
-```
 
 ```{r slides-scalars, message=FALSE, warning=FALSE, echo=FALSE}
 bau_total_deaths <- data_bau[intervention == "HTN Control + TFA Elimination" &
@@ -2174,7 +2363,7 @@ if (exists("dt_excel_per1m") && nrow(dt_excel_per1m) > 0) {
     annotate("text", x = max_year_global, y = grand_total_global,
              label = paste0("Total: ", formatC(round(grand_total_global),
                             format = "d", big.mark = ",")),
-             hjust = 1, vjust = -0.5, size = 3.5, fontface = "bold") +
+             hjust = 1, vjust = 0.5, size = 3.5, fontface = "bold") +
     labs(
       title = "Cumulative Deaths Averted Over Time — All Countries",
       x = "Year", y = "Cumulative Deaths Averted",
@@ -2442,6 +2631,14 @@ if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
   max_pop_b     <- max(dt_cumul_tfa$cum_pop_b)
   scale_factor  <- max_countries / max_pop_b
 
+  # After line 2632, add:
+  dt_cumul_tfa[, cum_pop_scaled := cum_pop_b * scale_factor]
+
+  scale_factor <- max_countries / max_pop_b
+
+# Build sec_axis using a formula with the literal value substituted in
+sec_axis_formula <- substitute(~ . / sf, list(sf = scale_factor))
+
   sl_fig_tfa_timeline <- ggplot() +
     # Stacked bars: cumulative countries
     geom_col(data = dt_bar,
@@ -2449,10 +2646,10 @@ if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
              width = 0.7) +
     # Line: cumulative population (rescaled to country-count axis)
     geom_line(data = dt_cumul_tfa,
-              aes(x = year, y = cum_pop_b * scale_factor),
+              aes(x = year, y = cum_pop_scaled),
               color = "#2c3e50", linewidth = 1.2) +
     geom_point(data = dt_cumul_tfa,
-               aes(x = year, y = cum_pop_b * scale_factor),
+               aes(x = year, y = cum_pop_scaled),
                color = "#2c3e50", size = 2.5) +
     # Data labels: cumulative country count on top of bars
     geom_text(data = dt_cumul_tfa,
@@ -2475,8 +2672,10 @@ if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
     scale_y_continuous(
       name   = "Cumulative Number of Countries",
       expand = expansion(mult = c(0, 0.15)),
-      sec.axis = sec_axis(~ . / scale_factor,
-                          name = "Cumulative Population Covered (billions)")
+      sec.axis = sec_axis(
+  trans = as.formula(sec_axis_formula),
+  name  = "Cumulative Population Covered (billions)"
+)
     ) +
     labs(
       title   = "Trans Fat Elimination: Global Best-Practice Policy Adoption",
