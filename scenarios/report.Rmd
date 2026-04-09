@@ -2714,7 +2714,11 @@ sec_axis_formula <- substitute(~ . / sf, list(sf = scale_factor))
 
 sl_fig_country_map <- NULL
 
-htn_countries <- unique(data_program[intervention %in% int_order, location])
+program_countries <- unique(data_program[intervention %in% int_order, location])
+
+dt_htn_control_scenarios <- fread(paste0(wd_data, "htn_control_scenarios_by_loc_year.csv"))
+htn_countries <- unique(dt_htn_control_scenarios$location)
+
 
 if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
 
@@ -2740,12 +2744,17 @@ if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
     has_htn & has_tfa, "HTN Program + TFA Ban",
     has_htn & !has_tfa, "HTN Program Only",
     !has_htn & has_tfa & tolower(tfa_rtsl_engagement) == "yes",
-      "TFA Ban Only (RTSL Engaged)",
+      "TFA Ban Only",
     default = NA_character_
   )]
 
+  dt_class[is.na(coverage) & has_tfa & !is.na(tfa_rtsl_engagement), coverage := "TFA Ban Only"]
+  
   # Remove countries that don't match any display category
   dt_class <- dt_class[!is.na(coverage)]
+  
+  # remove countries not counted in TF not HTN program, eg USA
+  dt_class <- dt_class[location %in% program_countries,]
 
   # Merge with ISO3 codes for map join
   dt_class_iso <- merge(dt_class, countries_dt[, .(location, iso3)],
@@ -2761,7 +2770,7 @@ if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
   coverage_cols <- c(
     "HTN Program + TFA Ban"         = "#6a3d9a",
     "HTN Program Only"              = "#1f78b4",
-    "TFA Ban Only (RTSL Engaged)"   = "#e31a1c"
+    "TFA Ban Only"   = "#e31a1c"
   )
 
   sl_fig_country_map <- ggplot(world_map) +
@@ -2802,7 +2811,6 @@ if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
 ```{r slides-manifest, message=FALSE, warning=FALSE, echo=FALSE}
 sl_manifest <- data.table(
   file = c(
-    "sl_scalars.rds", "sl_tab_summary.rds", "sl_tab_region.rds",
     "sl_tab_top15.rds", "sl_dt_cause.rds", "sl_dt_annual.rds",
     "sl_fig_deaths_averted.png", "sl_fig_top15_countries.png",
     "sl_fig_cum_averted.png",

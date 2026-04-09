@@ -138,3 +138,64 @@ IMPORTANT:
 - Check how country names are formatted in the data vs how they appear in map data, and handle any mismatches
 - If population data is not in tfa_policy_scenarios_assessment.rds, find where it is loaded in report.Rmd and join appropriately
 - Only modify report.Rmd and presentation_donors.rmd
+
+##########################################################################################
+##########################################################################################
+
+You are modifying two files: report.Rmd and presentation_donors.rmd. Do NOT modify any other files.
+
+First, read both files thoroughly. Pay special attention to the Bangladesh slide in presentation_donors.rmd — this is your style reference for structure, formatting, tone, and LaTeX/Beamer conventions used.
+
+TASK: Update the global summary slide titled "Total Lives Saved Across All Countries, by Intervention" to match the Bangladesh slide's style and quality.
+
+STEP 1: Understand the Bangladesh slide pattern
+
+In presentation_donors.rmd, find the Bangladesh country-specific slide. Note:
+- How the title is formatted
+- How the table is built (kable/kableExtra or raw LaTeX)
+- Column names, alignment, bolding of total row
+- Font size and spacing
+- How the narrative paragraph appears BELOW the table (not in an exampleblock or callout box — just a short plain paragraph)
+- The tone: concise, policy-oriented, donor-friendly
+
+STEP 2: Compute values in report.Rmd
+
+Add or update code chunks in report.Rmd that compute and save the following scalars (as .rds or in a named list following the existing pattern):
+- n_countries: total number of countries included in the assessment
+- grand_combined_m: total deaths averted across all countries and both interventions combined (in millions, formatted nicely e.g. "X.X million")
+- Any per-intervention totals needed for the table rows (HTN total, TFA total, combined total)
+- Remember: HTN and TFA have different target populations. Filter each scenario separately and sum. Do NOT use a pre-combined "HTN Control + TFA Elimination" scenario row.
+
+Make sure these objects are available for consumption by presentation_donors.rmd.
+
+STEP 3: Update the slide in presentation_donors.rmd
+
+Modify the "Total Lives Saved Across All Countries, by Intervention" slide to match Bangladesh style:
+
+TITLE:
+## Total Lives Saved Across All Countries, by Intervention
+
+TABLE:
+- Match the Bangladesh table format exactly (same kable/kableExtra settings, or same LaTeX table approach)
+- Clean column names: "Intervention", "Deaths Averted (2017–2050)", and any other relevant columns from the Bangladesh table pattern
+- Bold the total/combined row
+- Keep font size and spacing consistent with Bangladesh slide
+- Align columns the same way
+
+NARRATIVE (replace any existing exampleblock or callout box):
+- Write a short plain paragraph (NOT inside a block environment) below the table
+- Start with something like: "Across `r n_countries` countries..."
+- Reference total deaths averted using the inline R scalar (e.g., `r grand_combined_m`)
+- Include 1-2 sentences that:
+  - Emphasize the multi-country, global scale of impact
+  - Clarify that totals combine interventions targeting different populations (HTN program countries vs TFA national bans)
+  - Sound policy-oriented and donor-friendly, matching the Bangladesh narrative tone
+
+REMOVE:
+- Any exampleblock or alertblock environment currently wrapping the narrative
+- Any formatting that deviates from the Bangladesh slide pattern
+
+IMPORTANT:
+- Replicate the Bangladesh slide's LaTeX/Beamer conventions exactly (font sizes, vspace, table environment, etc.)
+- Only modify report.Rmd and presentation_donors.rmd
+- Test that inline R references will resolve correctly (variable names must match what is saved in report.Rmd)

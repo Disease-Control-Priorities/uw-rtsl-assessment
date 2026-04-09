@@ -2,7 +2,7 @@
 title: "RTSL Cardiovascular Health Program Impact Assessment"
 subtitle: "Projected Health Outcomes 2017--2050"
 author: "University of Washington -- Resolve to Save Lives"
-institute: "\\color{red}Work in Progress"
+institute: "\\color{red}For validation"
 date: "`r format(Sys.Date(), '%B %Y')`"
 output:
   beamer_presentation:
@@ -222,7 +222,7 @@ if (file.exists(png_enrollment)) {
   )
 }
 ```
-\footnotesize RTSL hypertension program enrollment and controlled population over time across all countries.
+\footnotesize Notes: RTSL hypertension program enrollment and control trends across countries. Data from HTN Global Tracker (2017–2025); gaps filled via interpolation/carry-forward. “Program controlled” = enrolled patients with BP <140/90 mmHg. Post-2025, both enrollment and control rates are held constant at 2025 levels for projections. 
 
 <!-- ======================================================================
      TFA TIMELINE AND COUNTRY MAP SLIDES
@@ -256,36 +256,38 @@ if (!is.null(fig_country_map)) {
 
 # Global Impact
 
-## Cumulative Deaths Averted Over Time --- All Countries
+## Total Lives Saved Across All Countries, by Intervention
 
-```{r fig-global-cumulative, echo=FALSE, fig.height=3.7}
-if (!is.null(fig_global_cumulative)) {
-  global_htn <- attr(fig_global_cumulative, "global_cum_htn")
-  global_tfa <- attr(fig_global_cumulative, "global_cum_tfa")
-  
-  global_htn_fmt <- formatC(round(global_htn), format = "d", big.mark = ",")
-  global_tfa_fmt <- formatC(round(global_tfa), format = "d", big.mark = ",")
-  global_total_fmt <- formatC(round(global_htn + global_tfa), format = "d", big.mark = ",")
+```{r tbl-grand-total-lives-saved, echo=FALSE, results="asis"}
+if (!is.null(tbl_grand_total_lives_saved)) {
+  grand_combined_val <- attr(tbl_grand_total_lives_saved, "grand_combined")
+  grand_combined_fmt <- if (!is.null(grand_combined_val)) formatC(round(grand_combined_val), format = "d", big.mark = ",") else "N/A"
 
-  print(fig_global_cumulative)
+  kable(tbl_grand_total_lives_saved, format = "latex", booktabs = TRUE) |>
+    kable_styling(latex_options = c("hold_position"), font_size = 9) |>
+    row_spec(3, bold = TRUE) |>
+    footnote(general = "Combined total sums across interventions with different target populations (program pop for HTN; national pop for TFA). Interpret with caution.")
 } else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Global cumulative chart\n(knit report.Rmd to generate)", cex = 1.2)
-  global_htn <- NA_real_
-  global_tfa <- NA_real_
-  global_htn_fmt <- "N/A"
-  global_tfa_fmt <- "N/A"
-  global_total_fmt <- "N/A"
+  cat("\\textit{PLACEHOLDER: Grand total lives saved not yet available. Knit report.Rmd to generate.}")
+  grand_combined_fmt <- "N/A"
 }
 ```
 
-
-\begin{exampleblock}{By 2050}
-\small
-`r if (exists("global_htn_fmt")) global_htn_fmt else "N/A"` cumulative deaths averted from HTN control, 
-`r if (exists("global_tfa_fmt")) global_tfa_fmt else "N/A"` from TFA elimination, for a combined total of 
-`r if (exists("global_htn") & exists("global_tfa")) scales::comma(global_htn + global_tfa) else "N/A"` deaths averted globally.
+\begin{exampleblock}{Bottom Line}
+Across `r n_countries` countries, RTSL hypertension control and trans-fat elimination are projected to avert `r grand_combined_m` million deaths (2017–2050).
 \end{exampleblock}
+
+
+<!-- ## Deaths Averted by Intervention (All Scenarios) -->
+
+<!-- ```{r fig-deaths-intervention, out.width="95%"} -->
+<!-- if (file.exists(png_deaths_int)) { -->
+<!--   knitr::include_graphics(png_deaths_int) -->
+<!-- } else { -->
+<!--   plot.new() -->
+<!--   text(0.5, 0.5, "PLACEHOLDER: Deaths averted by intervention\n(knit report.Rmd to generate)", cex = 1.2) -->
+<!-- } -->
+<!-- ``` -->
 
 <!-- ======================================================================
      PARETO CHARTS: TOP 20 COUNTRIES
@@ -359,25 +361,25 @@ Bangladesh has been an RTSL hypertension control partner since the program's ear
 
 \footnotesize HTN totals reflect program population; TFA totals reflect national population.
 
-## Bangladesh: Cumulative Deaths Averted Over Time
+<!-- ## Bangladesh: Cumulative Deaths Averted Over Time -->
 
-```{r bangladesh-cumulative-chart, echo=FALSE, fig.height=3.4}
-if (!is.null(fig_bangladesh_cumulative)) {
-  total_bd_chart <- attr(fig_bangladesh_cumulative, "total_bd")
-  total_bd_chart_fmt <- if (!is.null(total_bd_chart)) formatC(round(total_bd_chart), format = "d", big.mark = ",") else "N/A"
-  print(fig_bangladesh_cumulative)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Bangladesh cumulative chart\n(knit report.Rmd to generate)", cex = 1.2)
-  total_bd_chart_fmt <- "N/A"
-}
-```
+<!-- ```{r bangladesh-cumulative-chart, echo=FALSE, fig.height=3.4} -->
+<!-- if (!is.null(fig_bangladesh_cumulative)) { -->
+<!--   total_bd_chart <- attr(fig_bangladesh_cumulative, "total_bd") -->
+<!--   total_bd_chart_fmt <- if (!is.null(total_bd_chart)) formatC(round(total_bd_chart), format = "d", big.mark = ",") else "N/A" -->
+<!--   print(fig_bangladesh_cumulative) -->
+<!-- } else { -->
+<!--   plot.new() -->
+<!--   text(0.5, 0.5, "PLACEHOLDER: Bangladesh cumulative chart\n(knit report.Rmd to generate)", cex = 1.2) -->
+<!--   total_bd_chart_fmt <- "N/A" -->
+<!-- } -->
+<!-- ``` -->
 
-\begin{exampleblock}{Bangladesh Impact}
-Bangladesh: `r if (exists("total_bd_chart_fmt")) total_bd_chart_fmt else "N/A"` total deaths averted from 2017--2050 across both interventions.
-\end{exampleblock}
+<!-- \begin{exampleblock}{Bangladesh Impact} -->
+<!-- Bangladesh: `r if (exists("total_bd_chart_fmt")) total_bd_chart_fmt else "N/A"` total deaths averted from 2017--2050 across both interventions. -->
+<!-- \end{exampleblock} -->
 
-\footnotesize Cumulative deaths averted by intervention type. HTN figures reflect program population; TFA figures reflect national population.
+<!-- \footnotesize Cumulative deaths averted by intervention type. HTN figures reflect program population; TFA figures reflect national population. -->
 
 <!-- ======================================================================
      6. HOW WE KNOW THIS
@@ -714,22 +716,6 @@ kable(dt_scen, format = "latex", booktabs = TRUE, escape = FALSE,
 <!-- } -->
 <!-- ``` -->
 
-<!-- ## Total Lives Saved Across All Countries, by Intervention -->
-
-<!-- ```{r tbl-grand-total-lives-saved, echo=FALSE, results="asis"} -->
-<!-- if (!is.null(tbl_grand_total_lives_saved)) { -->
-<!--   grand_combined_val <- attr(tbl_grand_total_lives_saved, "grand_combined") -->
-<!--   grand_combined_fmt <- if (!is.null(grand_combined_val)) formatC(round(grand_combined_val), format = "d", big.mark = ",") else "N/A" -->
-
-<!--   kable(tbl_grand_total_lives_saved, format = "latex", booktabs = TRUE) |> -->
-<!--     kable_styling(latex_options = c("hold_position"), font_size = 9) |> -->
-<!--     row_spec(3, bold = TRUE) |> -->
-<!--     footnote(general = "Combined total sums across interventions with different target populations (program pop for HTN; national pop for TFA). Interpret with caution.") -->
-<!-- } else { -->
-<!--   cat("\\textit{PLACEHOLDER: Grand total lives saved not yet available. Knit report.Rmd to generate.}") -->
-<!--   grand_combined_fmt <- "N/A" -->
-<!-- } -->
-<!-- ``` -->
 
 <!-- \begin{exampleblock}{Grand Total} -->
 <!-- Across all RTSL-engaged countries, `r if (exists("grand_combined_fmt")) grand_combined_fmt else "N/A"` total deaths averted from 2017--2050 across both interventions. -->
@@ -801,6 +787,37 @@ kable(dt_scen, format = "latex", booktabs = TRUE, escape = FALSE,
 <!-- } -->
 <!-- ``` -->
 
+## Cumulative Deaths Averted Over Time --- All Countries
+
+```{r fig-global-cumulative, echo=FALSE, fig.height=3.7}
+if (!is.null(fig_global_cumulative)) {
+  global_htn <- attr(fig_global_cumulative, "global_cum_htn")
+  global_tfa <- attr(fig_global_cumulative, "global_cum_tfa")
+
+  global_htn_fmt <- formatC(round(global_htn), format = "d", big.mark = ",")
+  global_tfa_fmt <- formatC(round(global_tfa), format = "d", big.mark = ",")
+  global_total_fmt <- formatC(round(global_htn + global_tfa), format = "d", big.mark = ",")
+
+  print(fig_global_cumulative)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Global cumulative chart\n(knit report.Rmd to generate)", cex = 1.2)
+  global_htn <- NA_real_
+  global_tfa <- NA_real_
+  global_htn_fmt <- "N/A"
+  global_tfa_fmt <- "N/A"
+  global_total_fmt <- "N/A"
+}
+```
+
+
+\begin{exampleblock}{By 2050}
+\small
+`r if (exists("global_htn_fmt")) global_htn_fmt else "N/A"` cumulative deaths averted from HTN control,
+`r if (exists("global_tfa_fmt")) global_tfa_fmt else "N/A"` from TFA elimination, for a combined total of
+`r if (exists("global_htn") & exists("global_tfa")) scales::comma(global_htn + global_tfa) else "N/A"` deaths averted globally.
+\end{exampleblock}
+
 ## Combined Impact: Deaths Averted per 1 Million People
 
 ```{r fig-combined-per1m, fig.height=3.6}
@@ -812,7 +829,7 @@ if (!is.null(fig_combined_per1m)) {
 }
 ```
 
-\begin{alertblock}{Why Per-Capita Only}
+\begin{alertblock}{Why Per-Capita}
 Totals are not shown. Hypertension and TFA interventions have different target populations; per-capita rates enable valid comparison.
 \end{alertblock}
 
@@ -841,16 +858,7 @@ Totals are not shown. Hypertension and TFA interventions have different target p
      COMMENTED-OUT SLIDES (preserved from original)
      ====================================================================== -->
 
-<!-- ## Deaths Averted by Intervention (All Scenarios) -->
 
-<!-- ```{r fig-deaths-intervention, out.width="95%"} -->
-<!-- if (file.exists(png_deaths_int)) { -->
-<!--   knitr::include_graphics(png_deaths_int) -->
-<!-- } else { -->
-<!--   plot.new() -->
-<!--   text(0.5, 0.5, "PLACEHOLDER: Deaths averted by intervention\n(knit report.Rmd to generate)", cex = 1.2) -->
-<!-- } -->
-<!-- ``` -->
 
 <!-- ## Deaths Averted by Cause -->
 
