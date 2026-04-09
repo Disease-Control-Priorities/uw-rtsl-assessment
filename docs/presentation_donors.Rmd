@@ -224,6 +224,31 @@ if (file.exists(png_enrollment)) {
 ```
 \footnotesize RTSL hypertension program enrollment and controlled population over time across all countries.
 
+<!-- ======================================================================
+     TFA TIMELINE AND COUNTRY MAP SLIDES
+     ====================================================================== -->
+
+## Trans Fat Elimination: Global Policy Progress
+
+```{r fig-tfa-timeline, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
+if (!is.null(fig_tfa_timeline)) {
+  print(fig_tfa_timeline)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: TFA timeline chart\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
+
+## Global Coverage: HTN and TFA Interventions
+
+```{r fig-country-map, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
+if (!is.null(fig_country_map)) {
+  print(fig_country_map)
+} else {
+  plot.new()
+  text(0.5, 0.5, "PLACEHOLDER: Country coverage map\n(knit report.Rmd to generate)", cex = 1.2)
+}
+```
 
 <!-- ======================================================================
      5. GLOBAL RESULTS
@@ -299,31 +324,6 @@ if (!is.null(p_pareto_combined)) {
 }
 ```
 
-<!-- ======================================================================
-     TFA TIMELINE AND COUNTRY MAP SLIDES
-     ====================================================================== -->
-
-## Trans Fat Elimination: Global Policy Progress
-
-```{r fig-tfa-timeline, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
-if (!is.null(fig_tfa_timeline)) {
-  print(fig_tfa_timeline)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: TFA timeline chart\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
-
-## Global Coverage: HTN and TFA Interventions
-
-```{r fig-country-map, echo=FALSE, fig.width=12, fig.height=6, out.width="\\linewidth"}
-if (!is.null(fig_country_map)) {
-  print(fig_country_map)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Country coverage map\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
 
 <!-- ======================================================================
      4. BANGLADESH CASE EXAMPLE
@@ -546,18 +546,18 @@ if (!is.null(fig_htn_control_rates)) {
      A5. RTSL HTN PROGRAM ENROLLMENT OVER TIME
      ====================================================================== -->
 
-## RTSL Hypertension Program Enrollment Over Time
+<!-- ## RTSL Hypertension Program Enrollment Over Time -->
 
-```{r fig-enrollment-trend, echo=FALSE, out.width="95%", fig.align="center"}
-if (file.exists(png_enrollment)) {
-  knitr::include_graphics(png_enrollment)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Enrollment trend\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
+<!-- ```{r fig-enrollment-trend, echo=FALSE, out.width="95%", fig.align="center"} -->
+<!-- if (file.exists(png_enrollment)) { -->
+<!--   knitr::include_graphics(png_enrollment) -->
+<!-- } else { -->
+<!--   plot.new() -->
+<!--   text(0.5, 0.5, "PLACEHOLDER: Enrollment trend\n(knit report.Rmd to generate)", cex = 1.2) -->
+<!-- } -->
+<!-- ``` -->
 
-\footnotesize RTSL hypertension program enrollment over time by country.
+<!-- \footnotesize RTSL hypertension program enrollment over time by country. -->
 
 <!-- ======================================================================
      A6. ESTIMAND & CAUSAL FRAMEWORK
@@ -681,125 +681,125 @@ kable(dt_scen, format = "latex", booktabs = TRUE, escape = FALSE,
      A10. ADDITIONAL DETAIL TABLES
      ====================================================================== -->
 
-## Countries with TFA Elimination Policies (RTSL-Engaged)
+<!-- ## Countries with TFA Elimination Policies (RTSL-Engaged) -->
 
-```{r tfa-policy-timeline}
-if (!is.null(tbl_tfa_countries)) {
-  kable(tbl_tfa_countries, format = "latex", booktabs = TRUE,
-        col.names = c("Country", "Year Established", "Year in Effect", "RTSL Engaged")) |>
-    kable_styling(latex_options = c("striped", "hold_position"),
-                  font_size = 8, full_width = TRUE)
-} else {
-  cat("\\textit{PLACEHOLDER: TFA policy timeline not yet available. Knit report.Rmd to generate.}")
-}
-```
+<!-- ```{r tfa-policy-timeline} -->
+<!-- if (!is.null(tbl_tfa_countries)) { -->
+<!--   kable(tbl_tfa_countries, format = "latex", booktabs = TRUE, -->
+<!--         col.names = c("Country", "Year Established", "Year in Effect", "RTSL Engaged")) |> -->
+<!--     kable_styling(latex_options = c("striped", "hold_position"), -->
+<!--                   font_size = 8, full_width = TRUE) -->
+<!-- } else { -->
+<!--   cat("\\textit{PLACEHOLDER: TFA policy timeline not yet available. Knit report.Rmd to generate.}") -->
+<!-- } -->
+<!-- ``` -->
 
-\note{This table shows `r if (!is.null(tbl_tfa_countries)) nrow(tbl_tfa_countries) else "N"` countries with enacted TFA elimination policies where RTSL was directly engaged.}
+<!-- \note{This table shows `r if (!is.null(tbl_tfa_countries)) nrow(tbl_tfa_countries) else "N"` countries with enacted TFA elimination policies where RTSL was directly engaged.} -->
 
-## Hypertension Program Control vs. National Control Rate by Country
+<!-- ## Hypertension Program Control vs. National Control Rate by Country -->
 
-```{r tbl-htn-program-vs-country, echo=FALSE, results="asis"}
-if (!is.null(tbl_htn_program_vs_country)) {
-  underperf <- attr(tbl_htn_program_vs_country, "underperforming_rows")
-  k <- kable(tbl_htn_program_vs_country, format = "latex", booktabs = TRUE) |>
-    kable_styling(latex_options = c("striped", "hold_position"),
-                  font_size = 5, full_width = TRUE)
-  if (length(underperf) > 0) {
-    k <- k |> row_spec(underperf, background = "#FFDDC1")
-  }
-  k <- k |> footnote(general = "Highlighted rows: program control rate below national average.")
-  k
-} else {
-  cat("\\textit{PLACEHOLDER: HTN program vs country table not yet available. Knit report.Rmd to generate.}")
-}
-```
+<!-- ```{r tbl-htn-program-vs-country, echo=FALSE, results="asis"} -->
+<!-- if (!is.null(tbl_htn_program_vs_country)) { -->
+<!--   underperf <- attr(tbl_htn_program_vs_country, "underperforming_rows") -->
+<!--   k <- kable(tbl_htn_program_vs_country, format = "latex", booktabs = TRUE) |> -->
+<!--     kable_styling(latex_options = c("striped", "hold_position"), -->
+<!--                   font_size = 5, full_width = TRUE) -->
+<!--   if (length(underperf) > 0) { -->
+<!--     k <- k |> row_spec(underperf, background = "#FFDDC1") -->
+<!--   } -->
+<!--   k <- k |> footnote(general = "Highlighted rows: program control rate below national average.") -->
+<!--   k -->
+<!-- } else { -->
+<!--   cat("\\textit{PLACEHOLDER: HTN program vs country table not yet available. Knit report.Rmd to generate.}") -->
+<!-- } -->
+<!-- ``` -->
 
-## Total Lives Saved Across All Countries, by Intervention
+<!-- ## Total Lives Saved Across All Countries, by Intervention -->
 
-```{r tbl-grand-total-lives-saved, echo=FALSE, results="asis"}
-if (!is.null(tbl_grand_total_lives_saved)) {
-  grand_combined_val <- attr(tbl_grand_total_lives_saved, "grand_combined")
-  grand_combined_fmt <- if (!is.null(grand_combined_val)) formatC(round(grand_combined_val), format = "d", big.mark = ",") else "N/A"
+<!-- ```{r tbl-grand-total-lives-saved, echo=FALSE, results="asis"} -->
+<!-- if (!is.null(tbl_grand_total_lives_saved)) { -->
+<!--   grand_combined_val <- attr(tbl_grand_total_lives_saved, "grand_combined") -->
+<!--   grand_combined_fmt <- if (!is.null(grand_combined_val)) formatC(round(grand_combined_val), format = "d", big.mark = ",") else "N/A" -->
 
-  kable(tbl_grand_total_lives_saved, format = "latex", booktabs = TRUE) |>
-    kable_styling(latex_options = c("hold_position"), font_size = 9) |>
-    row_spec(3, bold = TRUE) |>
-    footnote(general = "Combined total sums across interventions with different target populations (program pop for HTN; national pop for TFA). Interpret with caution.")
-} else {
-  cat("\\textit{PLACEHOLDER: Grand total lives saved not yet available. Knit report.Rmd to generate.}")
-  grand_combined_fmt <- "N/A"
-}
-```
+<!--   kable(tbl_grand_total_lives_saved, format = "latex", booktabs = TRUE) |> -->
+<!--     kable_styling(latex_options = c("hold_position"), font_size = 9) |> -->
+<!--     row_spec(3, bold = TRUE) |> -->
+<!--     footnote(general = "Combined total sums across interventions with different target populations (program pop for HTN; national pop for TFA). Interpret with caution.") -->
+<!-- } else { -->
+<!--   cat("\\textit{PLACEHOLDER: Grand total lives saved not yet available. Knit report.Rmd to generate.}") -->
+<!--   grand_combined_fmt <- "N/A" -->
+<!-- } -->
+<!-- ``` -->
 
-\begin{exampleblock}{Grand Total}
-Across all RTSL-engaged countries, `r if (exists("grand_combined_fmt")) grand_combined_fmt else "N/A"` total deaths averted from 2017--2050 across both interventions.
-\end{exampleblock}
+<!-- \begin{exampleblock}{Grand Total} -->
+<!-- Across all RTSL-engaged countries, `r if (exists("grand_combined_fmt")) grand_combined_fmt else "N/A"` total deaths averted from 2017--2050 across both interventions. -->
+<!-- \end{exampleblock} -->
 
-## Total Lives Saved by Country and Intervention
+<!-- ## Total Lives Saved by Country and Intervention -->
 
-```{r tbl-total-lives-saved, echo=FALSE, results="asis"}
-if (!is.null(tbl_total_lives_saved)) {
-  kable(tbl_total_lives_saved, format = "latex", booktabs = TRUE) |>
-    kable_styling(latex_options = c("striped", "hold_position", "scale_down"),
-                  font_size = 7, full_width = TRUE) |>
-    footnote(general = "HTN totals reflect program population; TFA totals reflect national population. Combined totals are not shown where populations differ.")
-} else {
-  cat("\\textit{PLACEHOLDER: Total lives saved table not yet available. Knit report.Rmd to generate.}")
-}
-```
+<!-- ```{r tbl-total-lives-saved, echo=FALSE, results="asis"} -->
+<!-- if (!is.null(tbl_total_lives_saved)) { -->
+<!--   kable(tbl_total_lives_saved, format = "latex", booktabs = TRUE) |> -->
+<!--     kable_styling(latex_options = c("striped", "hold_position", "scale_down"), -->
+<!--                   font_size = 7, full_width = TRUE) |> -->
+<!--     footnote(general = "HTN totals reflect program population; TFA totals reflect national population. Combined totals are not shown where populations differ.") -->
+<!-- } else { -->
+<!--   cat("\\textit{PLACEHOLDER: Total lives saved table not yet available. Knit report.Rmd to generate.}") -->
+<!-- } -->
+<!-- ``` -->
 
-## Bangladesh: Program vs Overall Population
+<!-- ## Bangladesh: Program vs Overall Population -->
 
-```{r bangladesh-program-vs-population-short, echo=FALSE, message=FALSE, warning=FALSE, results='asis'}
-library(knitr)
-library(kableExtra)
+<!-- ```{r bangladesh-program-vs-population-short, echo=FALSE, message=FALSE, warning=FALSE, results='asis'} -->
+<!-- library(knitr) -->
+<!-- library(kableExtra) -->
 
-tab_compare <- data.frame(
-  `Age category` = c("≤30", "31–40", "41–50", "51–60", "61–70", "71–80", "81–90", "≥91"),
-  `Program %` = c("2.8", "15.4", "28.0", "29.0", "17.9", "5.6", "1.1", "0.2"),
-  `Bangladesh %` = c("~26", "~18", "~14", "~11", "~7", "~3", "~1", "~0.2"),
-  Interpretation = c("Underrep.", "Slightly underrep.", "Overrep.", "Strongly overrep.",
-                     "Overrep.", "Slightly overrep.", "Aligned", "Aligned"),
-  check.names = FALSE
-)
+<!-- tab_compare <- data.frame( -->
+<!--   `Age category` = c("≤30", "31–40", "41–50", "51–60", "61–70", "71–80", "81–90", "≥91"), -->
+<!--   `Program %` = c("2.8", "15.4", "28.0", "29.0", "17.9", "5.6", "1.1", "0.2"), -->
+<!--   `Bangladesh %` = c("~26", "~18", "~14", "~11", "~7", "~3", "~1", "~0.2"), -->
+<!--   Interpretation = c("Underrep.", "Slightly underrep.", "Overrep.", "Strongly overrep.", -->
+<!--                      "Overrep.", "Slightly overrep.", "Aligned", "Aligned"), -->
+<!--   check.names = FALSE -->
+<!-- ) -->
 
-kbl(tab_compare, booktabs = TRUE, align = "lccc") %>%
-  kable_styling(
-    latex_options = c("hold_position", "scale_down"),
-    font_size = 8
-  )
+<!-- kbl(tab_compare, booktabs = TRUE, align = "lccc") %>% -->
+<!--   kable_styling( -->
+<!--     latex_options = c("hold_position", "scale_down"), -->
+<!--     font_size = 8 -->
+<!--   ) -->
 
-cat("
-\\vspace{0.3cm}
+<!-- cat(" -->
+<!-- \\vspace{0.3cm} -->
 
-{\\footnotesize
-\\textbf{Takeaway:} The enrolled population is older than the national population, so the hypertension model should use the program age distribution when estimating impact.
-}
-")
-```
+<!-- {\\footnotesize -->
+<!-- \\textbf{Takeaway:} The enrolled population is older than the national population, so the hypertension model should use the program age distribution when estimating impact. -->
+<!-- } -->
+<!-- ") -->
+<!-- ``` -->
 
 
-## Top Contributing Countries
+<!-- ## Top Contributing Countries -->
 
-```{r fig-top-countries, out.width="95%"}
-if (file.exists(png_top_countries)) {
-  knitr::include_graphics(png_top_countries)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Top countries\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
+<!-- ```{r fig-top-countries, out.width="95%"} -->
+<!-- if (file.exists(png_top_countries)) { -->
+<!--   knitr::include_graphics(png_top_countries) -->
+<!-- } else { -->
+<!--   plot.new() -->
+<!--   text(0.5, 0.5, "PLACEHOLDER: Top countries\n(knit report.Rmd to generate)", cex = 1.2) -->
+<!-- } -->
+<!-- ``` -->
 
-## Geographic Distribution of Impact
+<!-- ## Geographic Distribution of Impact -->
 
-```{r fig-map, out.width="95%"}
-if (file.exists(png_map)) {
-  knitr::include_graphics(png_map)
-} else {
-  plot.new()
-  text(0.5, 0.5, "PLACEHOLDER: Geographic map\n(knit report.Rmd to generate)", cex = 1.2)
-}
-```
+<!-- ```{r fig-map, out.width="95%"} -->
+<!-- if (file.exists(png_map)) { -->
+<!--   knitr::include_graphics(png_map) -->
+<!-- } else { -->
+<!--   plot.new() -->
+<!--   text(0.5, 0.5, "PLACEHOLDER: Geographic map\n(knit report.Rmd to generate)", cex = 1.2) -->
+<!-- } -->
+<!-- ``` -->
 
 ## Combined Impact: Deaths Averted per 1 Million People
 
