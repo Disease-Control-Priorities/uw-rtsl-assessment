@@ -2305,7 +2305,7 @@ if (exists("dt_lives") && nrow(dt_lives) > 0) {
   tbl_grand_total_lives_saved <- data.table(
     Intervention = c("Hypertension Control", "TFA Elimination",
                      "Combined (All Interventions)"),
-    `Deaths Averted (2017-2050)` = c(
+    `Deaths Averted` = c(
       formatC(round(grand_htn), format = "d", big.mark = ","),
       formatC(round(grand_tfa), format = "d", big.mark = ","),
       formatC(round(grand_combined), format = "d", big.mark = ",")
