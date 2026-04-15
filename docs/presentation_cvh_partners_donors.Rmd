@@ -180,6 +180,7 @@ grand_daily_fmt <- if (!is.na(grand_combined_val)) {
 
 Across `r n_countries` countries, RTSL cardiovascular health programs are projected to avert `r grand_combined_m` million deaths from 2017--2050 across hypertension control and trans-fat elimination interventions.
 
+
 \medskip
 
 That is approximately **`r grand_daily_fmt` deaths averted every day** over more than three decades.
@@ -198,12 +199,12 @@ Sustained investment in hypertension control and trans-fat elimination could del
 
 \justifying
 
-Resolve to Save Lives partners with governments in `r n_countries` countries to deliver two proven, scalable cardiovascular health interventions:
+RTSL collaborates with governments and other partners in more than `r n_countries` countries to deliver proven, scalable CVH interventions:
 
 \medskip
 
-- **Hypertension control** --- population-level screening, treatment, and follow-up programs reaching millions of patients since 2017
-- **Trans-fat elimination** --- technical assistance to enact and implement best-practice policies that remove industrial trans fats from the food supply
+- **Hypertension control** --- blood pressure screening, treatment, and follow-up programs reaching millions of patients since 2017
+- **Trans-fat elimination** --- technical assistance and advocacy to enact and implement best-practice policies that remove industrial trans fats from the food supply
 - **Targeting the highest-risk populations** with the most cost-effective interventions available
 
 ## The Global CVD Burden
