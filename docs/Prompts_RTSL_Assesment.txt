@@ -199,3 +199,118 @@ IMPORTANT:
 - Replicate the Bangladesh slide's LaTeX/Beamer conventions exactly (font sizes, vspace, table environment, etc.)
 - Only modify report.Rmd and presentation_donors.rmd
 - Test that inline R references will resolve correctly (variable names must match what is saved in report.Rmd)
+
+##############################################################33
+###############################################################
+
+You are modifying three files: beamer_preamble.tex, report.Rmd, and presentation_cvh_partners_donors.rmd. Do NOT modify any other files. This is a 5-minute funders/donors presentation.
+
+IMPORTANT: Before starting, read ALL three files thoroughly. Also read the attached PPT file to understand ALL style requests and text changes shown as comments — you must implement every comment found in the PPT. Also read any existing data files referenced in report.Rmd to understand available data.
+
+OVERVIEW OF CHANGES:
+
+1. BEAMER PREAMBLE (beamer_preamble.tex):
+   - Increase default font size for better readability in a presentation setting
+   - Add UW logo (uw-logo.png) positioned in the bottom-right corner of every slide
+   - Ensure the logo does not overlap content
+
+2. REPORT.RMD — All computations go here:
+   All new figures, tables, scalars, and data objects must be computed in report.Rmd and saved as objects or .rds files for consumption by the presentation. Do NOT run any calculations in the presentation file.
+
+   Specific computation tasks:
+
+   a) COMBINED RESULTS ONLY: Remove any disaggregation by HTN vs TFA in outputs destined for this presentation. Show combined intervention results only in all text, tables, and figures. Remember HTN and TFA have different target populations — filter each separately then sum. Do not use a pre-combined scenario row.
+
+   b) PARETO CHART UPDATE: In the Combined Interventions Pareto chart, merge ALL Latin American and Caribbean countries into a single bar labeled "PAHO (Latin America & Caribbean)". Rank this merged bar among the other top countries by total deaths averted. Keep top 20 entries + "Rest of countries" structure.
+
+   c) EXPORT TO EXCEL: Export all figures data and data tables used in the presentation to a new file: presentation_cvh_partners_donors.xlsx. Each figure's underlying data and each table should be a separate sheet with clear sheet names.
+
+   d) PROBLEM FRAMING DATA: Search these sources and prepare content/scalars for the new slides:
+      - Global Burden of Disease 2023 results
+      - WHO Hypertension Control 2025 report
+      - Resolve to Save Lives program data
+      - WHO REPLACE initiative for trans fat elimination
+      - https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(25)02208-1/fulltext
+      - https://www.who.int/teams/nutrition-and-food-safety/replace-trans-fat
+      - https://resolvetosavelives.org/how-we-save-lives/healthier-food/
+      - https://resolvetosavelives.org/how-we-save-lives/blood-pressure-control/
+
+      Create text scalars or character objects with key statistics for use as inline R references in the presentation slides. For example: global hypertension prevalence, CVD deaths globally, trans fat attributable deaths, number of countries with TFA bans, population covered, etc.
+
+3. PRESENTATION_CVH_PARTNERS_DONORS.RMD — Slide deck changes:
+
+   EXISTING SLIDES:
+   - KEEP all existing content slides — do NOT delete them
+   - Update existing slides to show combined results only (no HTN vs TFA disaggregation)
+   - Use the updated PAHO-merged Pareto chart
+   - Implement ALL style requests and text changes from the PPT comments (read the PPT carefully)
+
+   APPENDIX/METHODOLOGY SLIDES:
+   - KEEP exactly ONE methodology slide and move it to an "Extra Slides" section at the very end of the deck
+   - DELETE all OTHER appendix and methodological slides only — do not touch any content/results slides
+
+   NEW SLIDES TO CREATE (use inline R references for all numbers):
+
+   a) SLIDE: "Setting the Stage" (3-column layout)
+      Column 1 — What is the problem?
+      - Hypertension and industrially-produced trans fat as leading preventable CVD risk factors
+      - Cite GBD 2023 and WHO reports
+      Column 2 — Why does it matter?
+      - Scale of mortality and morbidity globally
+      - Cite Lancet article and WHO data
+      Column 3 — Who is affected?
+      - LMICs disproportionately burdened
+      - Populations without access to treatment or policy protections
+      Use high-quality source citations throughout.
+
+   b) SLIDE: "The Challenge in Numbers"
+      - Key statistics from Resolve to Save Lives and WHO sources:
+        - Global hypertension burden numbers
+        - Trans fat exposure and policy gaps
+        - Countries without TFA bans, population unprotected
+        - Treatment gaps for hypertension
+      - Present as impactful, large-font statistics with brief context
+      - Cite: resolvetosavelives.org pages and WHO REPLACE data
+
+   c) SLIDE: "Our Approach" (3-column layout)
+      Column 1 — What we did?
+      - Brief description of the modeling/assessment approach
+      Column 2 — Who we worked with?
+      - Partners, country governments, WHO, RTSL
+      Column 3 — How was it implemented?
+      - Country-level modeling, scenario analysis, policy evaluation
+
+   d) SLIDE: "What We Learned"
+      - What would we do differently
+      - What surprised us
+      - What barriers we encountered
+      - Be honest and reflective — this is the slide most presenters underestimate
+      - Draw from the assessment findings and methodology challenges
+
+   e) SLIDE: "What's Next"
+      - Connect program experience to future goals
+      - Include a specific ask of partners: country connections, shared data, advocacy alignment, or resources
+      - End with ONE actionable sentence
+
+   SUGGESTED SLIDE ORDER for the presentation:
+   1. Title slide
+   2. Setting the Stage
+   3. The Challenge in Numbers
+   4. Our Approach
+   5. Existing key results slides (updated with combined-only results)
+   6. Pareto chart (updated with PAHO merge)
+   7. Map slide (if exists)
+   8. Other existing content slides (kept as-is but updated per PPT comments)
+   9. What We Learned
+   10. What's Next
+   11. --- Extra Slides --- (one methodology slide only)
+
+IMPORTANT REMINDERS:
+- KEEP all existing content/results slides. Only DELETE appendix/methodology slides (except one).
+- ALL calculations in report.Rmd, none in the presentation file
+- Read the PPT comments carefully and implement every single one
+- All inline R references must match object names saved in report.Rmd
+- Only modify beamer_preamble.tex, report.Rmd, and presentation_cvh_partners_donors.rmd
+- Export the Excel file from report.Rmd
+- Use publication-quality themes consistent with donor/funder audience
+- Keep text concise and policy-oriented throughout — this is a 5-minute presentation

@@ -189,6 +189,10 @@ new_countries <- data.table(
 )
 countries_dt <- rbind(countries_dt, new_countries[!iso3 %in% countries_dt$iso3],
                       use.names = TRUE, fill = TRUE)
+
+# Assign Argentina and Chile to Latin America and Caribbean (not high income)
+countries_dt[location %in% c("Argentina", "Chile"),
+             region := "Latin America and Caribbean"]
 ```
 
 ```{r load-model-output, message=FALSE, warning=FALSE, echo=FALSE}
@@ -2935,25 +2939,33 @@ dt_pareto_combined_paho[, cum_pct := cum_deaths / sum(deaths_averted)]
 dt_pareto_combined_paho[, location := factor(location, levels = location)]
 
 y_max_p <- max(dt_pareto_combined_paho$deaths_averted, na.rm = TRUE)
+dt_pareto_combined_paho[, y_max_p := y_max_p]
+dt_pareto_combined_paho[, cum_scaled := cum_pct * y_max_p]
+
+# Build sec_axis formula with literal value so the plot is self-contained when saved as RDS
+sec_axis_pareto <- substitute(~ . / ymp, list(ymp = y_max_p))
+
 p_pd_pareto_combined <- ggplot(dt_pareto_combined_paho, aes(x = location)) +
   geom_col(aes(y = deaths_averted), fill = "#4B2E83") +
-  geom_line(aes(y = cum_pct * y_max_p, group = 1),
+  geom_line(aes(y = cum_scaled, group = 1),
             color = "#85754D", linewidth = 1) +
-  geom_point(aes(y = cum_pct * y_max_p),
+  geom_point(aes(y = cum_scaled),
              color = "#85754D", size = 2) +
   scale_y_continuous(
     labels = scales::comma,
     name   = "Deaths Averted (2017-2050)",
-    sec.axis = sec_axis(~ . / y_max_p,
-                        name = "Cumulative percentage",
-                        labels = scales::percent_format(accuracy = 1))
+    sec.axis = sec_axis(
+      trans = as.formula(sec_axis_pareto),
+      name = "Cumulative percentage",
+      labels = scales::percent_format(accuracy = 1)
+    )
   ) +
   labs(
     x = NULL,
     title = "Combined Interventions: Top Countries by Deaths Averted",
     subtitle = "Latin America & Caribbean countries aggregated as PAHO"
   ) +
-  theme_minimal(base_size = 12) +
+  theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         plot.title = element_text(face = "bold"),
         plot.subtitle = element_text(color = "grey40"))
