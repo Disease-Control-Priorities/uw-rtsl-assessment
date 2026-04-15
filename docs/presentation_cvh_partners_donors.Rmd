@@ -6,7 +6,7 @@ date: "`r format(Sys.Date(), '%B %Y')`"
 output:
   beamer_presentation:
     latex_engine: xelatex
-    keep_tex: false
+    keep_tex: true
     slide_level: 2
     includes:
       in_header: beamer_preamble.tex
@@ -48,7 +48,7 @@ if (is.null(sl)) {
     cvd_deaths_global = "19.2 million",
     cvd_share_noncomm = "approximately one-third",
     htn_adults_global = "1.3 billion",
-    htn_uncontrolled_pct = "over 75%",
+    htn_uncontrolled_pct = "over 75\\%",
     htn_undiagnosed_share = "nearly half",
     htn_deaths_annual = "10.8 million",
     tfa_deaths_annual = "500,000",
@@ -58,7 +58,7 @@ if (is.null(sl)) {
     tfa_countries_none = "over 130",
     rtsl_htn_countries = "30+",
     rtsl_htn_enrolled = "30 million",
-    lmic_cvd_share = "over 80%",
+    lmic_cvd_share = "over 80\\%",
     premature_cvd_lmic = "over three-quarters"
   )
 }
@@ -138,7 +138,7 @@ knitr::opts_chunk$set(
 
 \footnotesize
 \begin{itemize}
-  \item \textbf{`r sl$lmic_cvd_share`} of CVD deaths occur in low- and middle-income countries.
+  \item \textbf{over 80\%} of CVD deaths occur in low- and middle-income countries.
   \item \textbf{`r sl$premature_cvd_lmic`} of \textit{premature} CVD deaths are in LMICs.
   \item Populations without access to treatment or policy protection bear the greatest burden.
 \end{itemize}
@@ -146,11 +146,12 @@ knitr::opts_chunk$set(
 \end{column}
 \end{columns}
 
+
 <!-- ======================================================================
      3. THE CHALLENGE IN NUMBERS
      ====================================================================== -->
 
-## The Challenge in Numbers
+## The Challenge in Numbers {.fragile}
 
 \begin{columns}[T]
 \begin{column}{0.48\textwidth}
@@ -161,7 +162,7 @@ knitr::opts_chunk$set(
 \small adults live with hypertension worldwide
 
 \vspace{0.5em}
-{\huge \textbf{`r sl$htn_uncontrolled_pct`}} \newline
+{\huge \textbf{over 75\%}} \newline
 \small of them are not controlled
 
 \vspace{0.5em}
@@ -176,7 +177,7 @@ knitr::opts_chunk$set(
 \textbf{\color{uwpurple}Trans fat}
 \vspace{0.4em}
 
-{\huge \textbf{`r sl$tfa_countries_bpp`}} \newline
+{\huge \textbf{67}} \newline
 \small countries with WHO best-practice TFA policies
 
 \vspace{0.5em}
@@ -195,8 +196,19 @@ knitr::opts_chunk$set(
 <!-- ======================================================================
      4. OUR APPROACH — 3-column
      ====================================================================== -->
+## What RTSL Does
 
-## Our Approach
+\justifying
+
+RTSL collaborates with governments and other partners in more than `r n_countries` countries to deliver proven, scalable CVH interventions:
+
+\medskip
+
+- **Hypertension control** --- blood pressure screening, treatment, and follow-up programs reaching millions of patients since 2017
+- **Trans-fat elimination** --- technical assistance and advocacy to enact and implement best-practice policies that remove industrial trans fats from the food supply
+- **Targeting the highest-risk populations** with the most cost-effective interventions available
+
+## Our Approach {.fragile}
 
 \begin{columns}[T]
 \begin{column}{0.32\textwidth}
@@ -207,7 +219,7 @@ knitr::opts_chunk$set(
 \begin{itemize}
   \item Built a country-level, multi-state CVD simulation across `r n_countries` countries.
   \item Projected deaths averted from 2017 to 2050 under observed RTSL program and policy trajectories.
-  \item Combined hypertension control and trans-fat elimination into one integrated assessment.
+  \item Combined HTN control and TFA elimination into one integrated assessment.
 \end{itemize}
 \end{column}
 
@@ -241,15 +253,17 @@ knitr::opts_chunk$set(
      5. HEADLINE IMPACT SLIDE
      ====================================================================== -->
 
-## `r grand_combined_m` Million Lives Saved
+## Headline Impact: `r grand_combined_m` Million Lives Saved {.fragile}
 
 \justifying
 
-Across **`r n_countries` countries**, RTSL cardiovascular health programs are projected to avert **`r grand_combined_fmt` deaths** from `r study_years`, combining hypertension control and trans-fat elimination.
+\medskip
+
+Across \textbf{`r n_countries` countries}, RTSL cardiovascular health programs are projected to avert \textbf{`r grand_combined_m` deaths} from `r study_years`, combining hypertension control and trans-fat elimination.
 
 \medskip
 
-That is approximately **`r daily_averted_fmt` deaths averted every day** over more than three decades.
+That is approximately \textbf{`r daily_averted_fmt` deaths averted every day} over more than three decades.
 
 \medskip
 
@@ -257,43 +271,43 @@ That is approximately **`r daily_averted_fmt` deaths averted every day** over mo
 Sustained investment in hypertension control and trans-fat elimination is projected to deliver one of the largest preventable reductions in cardiovascular mortality across RTSL-engaged countries.
 \end{exampleblock}
 
-<!-- ======================================================================
-     6. GLOBAL CUMULATIVE IMPACT CHART (combined only)
-     ====================================================================== -->
+<!-- <!-- ====================================================================== -->
+<!--      6. GLOBAL CUMULATIVE IMPACT CHART (combined only) -->
+<!--      ====================================================================== -->
 
-## Cumulative Lives Saved Over Time
+<!-- ## Cumulative Lives Saved Over Time -->
 
-```{r fig-global-cumulative-combined, fig.width=11, fig.height=5, out.width="\\linewidth"}
-if (!is.null(fig_pd_global_cumulative)) {
-  print(fig_pd_global_cumulative)
-} else {
-  plot.new()
-  text(0.5, 0.5,
-       "PLACEHOLDER: cumulative deaths averted (knit report.Rmd)",
-       cex = 1.2)
-}
-```
+<!-- ```{r fig-global-cumulative-combined, fig.width=11, fig.height=5, out.width="\\linewidth"} -->
+<!-- if (!is.null(fig_pd_global_cumulative)) { -->
+<!--   print(fig_pd_global_cumulative) -->
+<!-- } else { -->
+<!--   plot.new() -->
+<!--   text(0.5, 0.5, -->
+<!--        "PLACEHOLDER: cumulative deaths averted (knit report.Rmd)", -->
+<!--        cex = 1.2) -->
+<!-- } -->
+<!-- ``` -->
 
-\footnotesize Combined hypertension control and trans-fat elimination, all RTSL-engaged countries, 2017--2050.
+<!-- \footnotesize Combined hypertension control and trans-fat elimination, all RTSL-engaged countries, 2017--2050. -->
 
-<!-- ======================================================================
-     7. REGIONAL SUMMARY (combined)
-     ====================================================================== -->
+<!-- <!-- ====================================================================== -->
+<!--      7. REGIONAL SUMMARY (combined) -->
+<!--      ====================================================================== -->
 
-## Impact by Region
+<!-- ## Impact by Region -->
 
-```{r tbl-region-combined, results="asis"}
-if (!is.null(sl_pd_tab_region)) {
-  kable(sl_pd_tab_region, format = "latex", booktabs = TRUE,
-        align = "lcr",
-        caption = "Combined deaths averted by region (HTN + TFA, 2017-2050).") |>
-    kable_styling(latex_options = c("hold_position"),
-                  font_size = 10, full_width = FALSE) |>
-    column_spec(1, bold = TRUE)
-} else {
-  cat("\\textit{PLACEHOLDER: regional table --- knit report.Rmd.}")
-}
-```
+<!-- ```{r tbl-region-combined, results="asis"} -->
+<!-- if (!is.null(sl_pd_tab_region)) { -->
+<!--   kable(sl_pd_tab_region, format = "latex", booktabs = TRUE, -->
+<!--         align = "lcr", -->
+<!--         caption = "Combined deaths averted by region (HTN + TFA, 2017-2050).") |> -->
+<!--     kable_styling(latex_options = c("hold_position"), -->
+<!--                   font_size = 10, full_width = FALSE) |> -->
+<!--     column_spec(1, bold = TRUE) -->
+<!-- } else { -->
+<!--   cat("\\textit{PLACEHOLDER: regional table --- knit report.Rmd.}") -->
+<!-- } -->
+<!-- ``` -->
 
 <!-- ======================================================================
      8. PARETO CHART (combined, PAHO-merged)
@@ -312,7 +326,7 @@ if (!is.null(p_pd_pareto_combined)) {
 }
 ```
 
-\footnotesize All Latin America & Caribbean countries combined into a single "PAHO" bar. Top 20 entries plus "Rest of countries".
+\footnotesize  Top 20 entries. All Latin America and Caribbean countries combined into a single "PAHO" bar.
 
 <!-- ======================================================================
      9. GLOBAL COVERAGE MAP
@@ -350,7 +364,7 @@ if (!is.null(fig_tfa_timeline)) {
 
 <!-- ======================================================================
      11. HTN PROGRAM ENROLLMENT (existing asset, kept)
-     ====================================================================== -->
+     ======================================================================  -->
 
 ## RTSL Hypertension Program Enrollment Over Time
 
@@ -371,14 +385,15 @@ if (file.exists(png_enrollment)) {
      12. WHAT WE LEARNED
      ====================================================================== -->
 
-## What We Learned
+## What We Learned {.fragile}
 
+  <!-- \item The \textbf{population reach} of trans-fat policies rivals the impact of HTN treatment --- with no per-patient delivery cost once a policy is in force. -->
+  
 \begin{columns}[T]
 \begin{column}{0.48\textwidth}
 \textbf{\color{uwpurple}What surprised us}
 \footnotesize
 \begin{itemize}
-  \item The \textbf{population reach} of trans-fat policies rivals the impact of HTN treatment --- with no per-patient delivery cost once a policy is in force.
   \item A small number of countries drive most of the global impact: scale of the program matters as much as its efficacy.
 \end{itemize}
 
@@ -407,25 +422,26 @@ if (file.exists(png_enrollment)) {
      13. WHAT'S NEXT
      ====================================================================== -->
 
-## What's Next
+## What's Next {.fragile}
 
 \footnotesize
 \begin{itemize}
-  \item \textbf{Extend} the modeling framework to additional RTSL priority countries and to secondary risk factors (sodium, tobacco).
+  \item \textbf{Extend} the modeling framework to additional RTSL priority countries and to secondary risk factors (sodium).
   \item \textbf{Refresh} country estimates on an annual cadence as program and policy data arrive.
   \item \textbf{Translate} findings into a country-facing, interactive tool for ministries of health and partners.
+  \item \textbf{Disseminate} results through peer-reviewed publication and global health forums to inform policy and funding decisions. "100 Million Lives Saved" manuscript currently under review.
 \end{itemize}
 
 \medskip
-\textbf{\color{uwpurple}Our ask of partners}
-\footnotesize
-\begin{itemize}
-  \item Country connections --- introductions to ministries for data validation and dissemination.
-  \item Shared data --- continued access to program monitoring and policy implementation data.
-  \item Advocacy alignment --- joint messaging on preventable CVD burden for upcoming global forums.
-\end{itemize}
+<!-- \textbf{\color{uwpurple}Our ask of partners} -->
+<!-- \footnotesize -->
+<!-- \begin{itemize} -->
+<!--   \item Country connections --- introductions to ministries for data validation and dissemination. -->
+<!--   \item Shared data --- continued access to program monitoring and policy implementation data. -->
+<!--   \item Advocacy alignment --- joint messaging on preventable CVD burden for upcoming global forums. -->
+<!-- \end{itemize} -->
 
-\bigskip
+<!-- \bigskip -->
 \begin{exampleblock}{One ask}
 \large Help us turn `r grand_combined_m` million projected lives saved into a shared, actionable evidence base for ministries, donors, and advocates.
 \end{exampleblock}
@@ -436,7 +452,7 @@ if (file.exists(png_enrollment)) {
 
 # Extra Slides
 
-## Methodology at a Glance
+## Methodology at a Glance {.fragile}
 
 \begin{columns}[T]
 \begin{column}{0.48\textwidth}
@@ -453,8 +469,8 @@ if (file.exists(png_enrollment)) {
 \textbf{\color{uwpurple}Interventions and counterfactual}
 \footnotesize
 \begin{itemize}
-  \item \textbf{HTN:} observed RTSL program control rates (2017--2025) maintained to 2050; Ettehad et al.\ 2016 treatment effects.
-  \item \textbf{TFA:} full elimination of industrial TFA in countries with enacted best-practice policies (2-year lag).
+  \item \textbf{HTN:} observed RTSL program control rates (2017--2025) maintained to 2050; Ettehad et al. 2016 treatment effects.
+  \item \textbf{TFA:} full elimination of industrial TFA in countries with enacted best-practice policies.
   \item \textbf{Counterfactual:} zero incremental program effect (business-as-usual).
   \item \textbf{Combined:} HTN and TFA filtered separately (different target populations), then summed per country.
 \end{itemize}
@@ -463,3 +479,5 @@ if (file.exists(png_enrollment)) {
 
 \vspace{0.4em}
 \footnotesize \textit{Inputs: GBD 2023, GBD 2019 RRs, UNWPP 2024, HTN Global Tracker, WHO TFA policy tracker, RTSL program monitoring data.}
+
+<!-- end of presentation -->
