@@ -2814,6 +2814,351 @@ if (exists("dt_tfa_scenarios") && !is.null(dt_tfa_scenarios)) {
 }
 ```
 
+<!-- ======================================================================
+     PARTNERS & DONORS PRESENTATION ARTEFACTS
+     All computations for presentation_cvh_partners_donors.Rmd live here.
+     - Combined (HTN + TFA) results only (no disaggregation in outputs)
+     - HTN and TFA have different target populations so they are filtered
+       separately then summed (do NOT use a pre-combined scenario row).
+     - PAHO merge: all Latin America & Caribbean countries combined into a
+       single "PAHO (Latin America & Caribbean)" bar on the Pareto chart.
+     - Problem-framing scalars for the new opening slides (sourced from GBD
+       2023, WHO Hypertension 2025 report, WHO REPLACE, Lancet 2025,
+       and resolvetosavelives.org program pages).
+     - Separate Excel export: presentation_cvh_partners_donors.xlsx
+     ====================================================================== -->
+
+```{r pd-combined-country, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Per-country combined deaths averted (HTN + TFA summed by country) ------
+# HTN and TFA are filtered separately (different target populations) then
+# summed at the country level to produce the combined total used throughout
+# the donors/partners presentation.
+dt_pd_htn <- dt_excel_per1m[
+  scenario == "HTN Control (Program)" & year >= 2017,
+  .(htn_averted = sum(n_deaths_averted, na.rm = TRUE)),
+  by = location
+]
+dt_pd_tfa <- dt_excel_per1m[
+  scenario == "TFA Elimination" & year >= 2017,
+  .(tfa_averted = sum(n_deaths_averted, na.rm = TRUE)),
+  by = location
+]
+dt_pd_country <- merge(dt_pd_htn, dt_pd_tfa, by = "location", all = TRUE)
+dt_pd_country[is.na(htn_averted), htn_averted := 0]
+dt_pd_country[is.na(tfa_averted), tfa_averted := 0]
+dt_pd_country[, combined_averted := htn_averted + tfa_averted]
+
+# Attach region metadata
+dt_pd_country <- merge(dt_pd_country, countries_dt[, .(location, region)],
+                       by = "location", all.x = TRUE)
+setorder(dt_pd_country, -combined_averted)
+
+saveRDS(dt_pd_country, paste0(slides_dir, "sl_pd_country_combined.rds"))
+message("PD saved: sl_pd_country_combined.rds")
+```
+
+```{r pd-annual-combined, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Global annual combined deaths averted (HTN + TFA, sum over countries) --
+dt_pd_annual <- dt_excel_per1m[
+  scenario %in% c("HTN Control (Program)", "TFA Elimination") & year >= 2017,
+  .(deaths_averted = sum(n_deaths_averted, na.rm = TRUE)),
+  by = year
+]
+setorder(dt_pd_annual, year)
+dt_pd_annual[, cum_averted := cumsum(deaths_averted)]
+
+# Cumulative-deaths-averted chart used in place of the HTN-vs-TFA stacked area
+fig_pd_global_cumulative <- ggplot(dt_pd_annual,
+       aes(x = year, y = cum_averted)) +
+  geom_area(alpha = 0.85, fill = "#4B2E83") +
+  geom_line(color = "#4B2E83", linewidth = 1) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_continuous(breaks = seq(2017, 2050, 5)) +
+  annotate("text",
+           x = max(dt_pd_annual$year),
+           y = max(dt_pd_annual$cum_averted),
+           label = paste0("Total: ",
+                          formatC(round(max(dt_pd_annual$cum_averted)),
+                                  format = "d", big.mark = ",")),
+           hjust = 1, vjust = 1.3, size = 4.5, fontface = "bold") +
+  labs(
+    title = "Cumulative Deaths Averted: RTSL CVH Programs",
+    x = "Year",
+    y = "Cumulative deaths averted",
+    caption = "Combined hypertension control and trans-fat elimination across RTSL-engaged countries (2017-2050)."
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none",
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(face = "bold"),
+        plot.caption = element_text(size = 8, hjust = 0))
+
+saveRDS(fig_pd_global_cumulative,
+        paste0(slides_dir, "sl_pd_fig_global_cumulative.rds"))
+saveRDS(dt_pd_annual, paste0(slides_dir, "sl_pd_annual_combined.rds"))
+message("PD saved: sl_pd_fig_global_cumulative.rds, sl_pd_annual_combined.rds")
+```
+
+```{r pd-pareto-combined-paho, message=FALSE, warning=FALSE, echo=FALSE, fig.width=12, fig.height=6}
+# ---- Combined Pareto chart with Latin America & Caribbean merged to "PAHO" --
+# Take per-country combined totals, fold all LAC countries into a single
+# pseudo-country, then rank and keep Top 20 + "Rest of countries".
+dt_pareto_paho <- copy(dt_pd_country)
+
+# Merge all Latin America & Caribbean countries into a single PAHO row
+lac_mask <- dt_pareto_paho$region == "Latin America and Caribbean" &
+              !is.na(dt_pareto_paho$region)
+paho_total <- dt_pareto_paho[lac_mask,
+  .(location = "PAHO (Latin America & Caribbean)",
+    htn_averted      = sum(htn_averted,      na.rm = TRUE),
+    tfa_averted      = sum(tfa_averted,      na.rm = TRUE),
+    combined_averted = sum(combined_averted, na.rm = TRUE),
+    region           = "Latin America and Caribbean")]
+dt_pareto_paho <- rbind(dt_pareto_paho[!lac_mask], paho_total, fill = TRUE)
+
+# Rank by combined deaths averted
+setorder(dt_pareto_paho, -combined_averted)
+
+top20 <- head(dt_pareto_paho, 20)
+rest <- dt_pareto_paho[!location %in% top20$location,
+  .(location = "Rest of countries",
+    htn_averted      = sum(htn_averted,      na.rm = TRUE),
+    tfa_averted      = sum(tfa_averted,      na.rm = TRUE),
+    combined_averted = sum(combined_averted, na.rm = TRUE),
+    region           = NA_character_)]
+
+dt_pareto_combined_paho <- rbind(top20, rest, fill = TRUE)
+setorder(dt_pareto_combined_paho, -combined_averted)
+dt_pareto_combined_paho[, deaths_averted := combined_averted]
+dt_pareto_combined_paho[, cum_deaths := cumsum(deaths_averted)]
+dt_pareto_combined_paho[, cum_pct := cum_deaths / sum(deaths_averted)]
+dt_pareto_combined_paho[, location := factor(location, levels = location)]
+
+y_max_p <- max(dt_pareto_combined_paho$deaths_averted, na.rm = TRUE)
+p_pd_pareto_combined <- ggplot(dt_pareto_combined_paho, aes(x = location)) +
+  geom_col(aes(y = deaths_averted), fill = "#4B2E83") +
+  geom_line(aes(y = cum_pct * y_max_p, group = 1),
+            color = "#85754D", linewidth = 1) +
+  geom_point(aes(y = cum_pct * y_max_p),
+             color = "#85754D", size = 2) +
+  scale_y_continuous(
+    labels = scales::comma,
+    name   = "Deaths Averted (2017-2050)",
+    sec.axis = sec_axis(~ . / y_max_p,
+                        name = "Cumulative percentage",
+                        labels = scales::percent_format(accuracy = 1))
+  ) +
+  labs(
+    x = NULL,
+    title = "Combined Interventions: Top Countries by Deaths Averted",
+    subtitle = "Latin America & Caribbean countries aggregated as PAHO"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(face = "bold"),
+        plot.subtitle = element_text(color = "grey40"))
+
+saveRDS(p_pd_pareto_combined,
+        paste0(slides_dir, "sl_pd_pareto_combined.rds"))
+saveRDS(dt_pareto_combined_paho,
+        paste0(slides_dir, "sl_pd_pareto_combined_data.rds"))
+message("PD saved: sl_pd_pareto_combined.rds (PAHO-merged Pareto)")
+```
+
+```{r pd-tbl-region-combined, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Regional combined deaths averted for the donors/partners presentation --
+sl_pd_tab_region <- dt_pd_country[!is.na(region),
+  .(deaths_averted = sum(combined_averted, na.rm = TRUE),
+    n_countries    = .N),
+  by = region]
+setorder(sl_pd_tab_region, -deaths_averted)
+sl_pd_tab_region[, `Deaths Averted` := formatC(round(deaths_averted),
+                                                format = "d", big.mark = ",")]
+sl_pd_tab_region[, Countries := n_countries]
+setnames(sl_pd_tab_region, "region", "Region")
+
+saveRDS(sl_pd_tab_region[, .(Region, Countries, `Deaths Averted`)],
+        paste0(slides_dir, "sl_pd_tab_region.rds"))
+message("PD saved: sl_pd_tab_region.rds")
+```
+
+```{r pd-tbl-top-countries, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Top 10 countries (combined, PAHO-merged) -------------------------------
+sl_pd_tab_top <- head(dt_pareto_combined_paho[location != "Rest of countries"], 10)
+sl_pd_tab_top[, `Deaths Averted` := formatC(round(deaths_averted),
+                                              format = "d", big.mark = ",")]
+sl_pd_tab_top[, `Share of Total` := scales::percent(cum_pct - shift(cum_pct, fill = 0),
+                                                     accuracy = 0.1)]
+saveRDS(sl_pd_tab_top[, .(Country = as.character(location), `Deaths Averted`,
+                          `Share of Total`)],
+        paste0(slides_dir, "sl_pd_tab_top_countries.rds"))
+message("PD saved: sl_pd_tab_top_countries.rds")
+```
+
+```{r pd-combined-scalars, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Combined totals and framing scalars for inline R refs ------------------
+grand_combined_pd <- sum(dt_pd_country$combined_averted, na.rm = TRUE)
+
+sl_pd_scalars <- list(
+  # Model outputs - combined totals
+  n_countries           = n_countries,
+  n_htn_countries       = n_htn_countries,
+  n_tfa_countries       = n_tfa_countries,
+  study_years           = study_years,
+  year_min              = year_min,
+  year_max              = year_max,
+  grand_combined        = grand_combined_pd,
+  grand_combined_fmt    = formatC(round(grand_combined_pd), format = "d",
+                                   big.mark = ","),
+  grand_combined_m      = formatC(round(grand_combined_pd / 1e6, 1),
+                                   format = "f", digits = 1, big.mark = ","),
+  daily_averted_fmt     = formatC(round(grand_combined_pd / ((year_max - 2017 + 1) * 365)),
+                                   format = "d", big.mark = ","),
+  n_years               = year_max - year_min + 1,
+
+  # --- Problem-framing scalars (external public sources) ---
+  # Source: GBD 2023 (IHME). CVD remains the leading cause of death globally.
+  cvd_deaths_global     = "19.2 million",     # annual CVD deaths, GBD 2023
+  cvd_share_noncomm     = "approximately one-third",  # of all global deaths
+  # Source: WHO Global Report on Hypertension (2023/2025 update); Lancet 2025
+  htn_adults_global     = "1.3 billion",       # adults living with hypertension
+  htn_uncontrolled_pct  = "over 75%",          # of adults with HTN not controlled
+  htn_undiagnosed_share = "nearly half",        # of adults with HTN undiagnosed
+  htn_deaths_annual     = "10.8 million",      # deaths attributable to high SBP (GBD 2023)
+  # Source: WHO REPLACE / WHO TFA policy tracker (as of 2024)
+  tfa_deaths_annual     = "500,000",            # annual IHD deaths attributable to TFA
+  tfa_protected_pop     = "3.4 billion",        # covered by best-practice TFA policies
+  tfa_unprotected_pop   = "roughly 5 billion",  # without best-practice protection
+  tfa_countries_bpp     = "53",                 # countries with WHO best-practice TFA policy
+  tfa_countries_none    = "over 130",           # countries without any TFA policy
+  # Source: RTSL program pages (resolvetosavelives.org)
+  rtsl_htn_countries    = "30+",                # countries with RTSL HTN program support
+  rtsl_htn_enrolled     = "30 million",         # patients enrolled in RTSL-supported HTN programs
+  # Source: Lancet 2025 (S0140-6736(25)02208-1) - CVD burden synthesis
+  lmic_cvd_share        = "over 80%",           # of CVD deaths occurring in LMICs
+  premature_cvd_lmic    = "over three-quarters" # of premature CVD deaths in LMICs
+)
+
+saveRDS(sl_pd_scalars, paste0(slides_dir, "sl_pd_scalars.rds"))
+message("PD saved: sl_pd_scalars.rds")
+```
+
+```{r pd-excel-export, message=FALSE, warning=FALSE, echo=FALSE}
+# ---- Dedicated Excel workbook for the donors/partners presentation ---------
+# One sheet per figure/table used in the deck.
+wb_pd <- createWorkbook()
+
+add_sheet_pd <- function(sheet_name, dat, title_str) {
+  addWorksheet(wb_pd, sheet_name)
+  writeData(wb_pd, sheet_name, title_str, startRow = 1, startCol = 1)
+  addStyle(wb_pd, sheet_name,
+           style = createStyle(fontSize = 12, textDecoration = "bold"),
+           rows = 1, cols = 1)
+  writeData(wb_pd, sheet_name, dat, startRow = 3, startCol = 1,
+            headerStyle = createStyle(textDecoration = "bold",
+                                      fgFill = "#4B2E83",
+                                      fontColour = "white",
+                                      border = "Bottom"))
+  setColWidths(wb_pd, sheet_name, cols = seq_len(ncol(dat)), widths = "auto")
+}
+
+# Fig: Cumulative deaths averted over time (combined)
+add_sheet_pd("Fig_Cumulative_Averted",
+             as.data.frame(dt_pd_annual),
+             "Annual and cumulative deaths averted (HTN + TFA combined), all RTSL countries.")
+
+# Fig: PAHO-merged Pareto chart data
+add_sheet_pd("Fig_Pareto_Combined_PAHO",
+             as.data.frame(dt_pareto_combined_paho[, .(
+               location = as.character(location), htn_averted, tfa_averted,
+               deaths_averted, cum_deaths, cum_pct)]),
+             "Combined Pareto (top 20 + Rest). LAC countries merged into single PAHO bar.")
+
+# Tbl: Per-country combined totals
+add_sheet_pd("Tbl_Country_Combined",
+             as.data.frame(dt_pd_country),
+             "Per-country combined deaths averted (HTN + TFA, 2017-2050).")
+
+# Tbl: Regional summary (combined)
+add_sheet_pd("Tbl_Region_Combined",
+             as.data.frame(sl_pd_tab_region),
+             "Deaths averted by region (HTN + TFA combined).")
+
+# Tbl: Top-10 countries for presentation
+add_sheet_pd("Tbl_Top_Countries",
+             as.data.frame(readRDS(paste0(slides_dir, "sl_pd_tab_top_countries.rds"))),
+             "Top 10 countries/regions by combined deaths averted (PAHO-merged).")
+
+# Tbl: Grand totals summary used on title impact slide
+add_sheet_pd("Tbl_Grand_Totals",
+             data.frame(
+               Metric = c("Countries", "HTN countries", "TFA countries",
+                          "Study period", "Total deaths averted (HTN+TFA)",
+                          "Average deaths averted per day"),
+               Value  = c(sl_pd_scalars$n_countries, sl_pd_scalars$n_htn_countries,
+                          sl_pd_scalars$n_tfa_countries, sl_pd_scalars$study_years,
+                          sl_pd_scalars$grand_combined_fmt,
+                          sl_pd_scalars$daily_averted_fmt)
+             ),
+             "Grand totals (combined) used on opening impact slide.")
+
+# Reference: problem-framing scalars with sources
+framing_df <- data.frame(
+  Variable = c("CVD deaths globally (annual)",
+               "CVD share of global deaths",
+               "Adults with hypertension globally",
+               "Share with uncontrolled HTN",
+               "Share with undiagnosed HTN",
+               "Deaths attributable to high SBP (annual)",
+               "IHD deaths attributable to TFA (annual)",
+               "Population covered by best-practice TFA policies",
+               "Population without best-practice TFA protection",
+               "Countries with WHO best-practice TFA policy",
+               "Countries without any TFA policy",
+               "RTSL-supported HTN countries",
+               "Patients enrolled in RTSL HTN programs",
+               "Share of CVD deaths in LMICs",
+               "Share of premature CVD deaths in LMICs"),
+  Value    = c(sl_pd_scalars$cvd_deaths_global,
+               sl_pd_scalars$cvd_share_noncomm,
+               sl_pd_scalars$htn_adults_global,
+               sl_pd_scalars$htn_uncontrolled_pct,
+               sl_pd_scalars$htn_undiagnosed_share,
+               sl_pd_scalars$htn_deaths_annual,
+               sl_pd_scalars$tfa_deaths_annual,
+               sl_pd_scalars$tfa_protected_pop,
+               sl_pd_scalars$tfa_unprotected_pop,
+               sl_pd_scalars$tfa_countries_bpp,
+               sl_pd_scalars$tfa_countries_none,
+               sl_pd_scalars$rtsl_htn_countries,
+               sl_pd_scalars$rtsl_htn_enrolled,
+               sl_pd_scalars$lmic_cvd_share,
+               sl_pd_scalars$premature_cvd_lmic),
+  Source   = c("GBD 2023 (IHME)",
+               "GBD 2023 (IHME)",
+               "WHO Global Report on Hypertension 2023; Lancet 2025",
+               "WHO Global Report on Hypertension 2023",
+               "WHO Global Report on Hypertension 2023",
+               "GBD 2023 (IHME)",
+               "WHO REPLACE initiative",
+               "WHO TFA policy tracker 2024",
+               "WHO TFA policy tracker 2024",
+               "WHO TFA policy tracker 2024",
+               "WHO TFA policy tracker 2024",
+               "resolvetosavelives.org/blood-pressure-control",
+               "resolvetosavelives.org/blood-pressure-control",
+               "Lancet 2025 S0140-6736(25)02208-1",
+               "Lancet 2025 S0140-6736(25)02208-1")
+)
+add_sheet_pd("Ref_Framing_Scalars",
+             framing_df,
+             "Problem-framing statistics used on opening slides (external sources).")
+
+out_xlsx_pd <- paste0(wd_scen, "presentation_cvh_partners_donors.xlsx")
+saveWorkbook(wb_pd, out_xlsx_pd, overwrite = TRUE)
+message("Presentation tables exported to: ", out_xlsx_pd)
+```
+
 ```{r slides-manifest, message=FALSE, warning=FALSE, echo=FALSE}
 sl_manifest <- data.table(
   file = c(
